@@ -224,6 +224,15 @@ struct AppCopy {
         }
     }
 
+    var vlessConfigPlaceholder: String {
+        switch language {
+        case .english:
+            return "Paste a VLESS, VMess, Trojan, or Shadowsocks link here"
+        case .persian:
+            return "لینک VLESS، VMess، Trojan یا Shadowsocks را اینجا وارد کن"
+        }
+    }
+
     var detailsTitle: String {
         language == .english ? "Details" : "جزئیات"
     }

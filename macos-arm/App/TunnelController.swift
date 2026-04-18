@@ -114,9 +114,9 @@ final class TunnelController: ObservableObject {
 
     @Published var configuration: TunnelConfiguration = .defaults
     @Published var selectedConnectionMode: AppConnectionMode = .proxy
-    @Published var whitelistDomainInput = TunnelConfiguration.defaults.fakeSNI
-    @Published var whitelistIPInput = TunnelConfiguration.defaults.connectIP
-    @Published var vlessConfigInput = TunnelConfiguration.defaultVlessURI
+    @Published var whitelistDomainInput = ""
+    @Published var whitelistIPInput = ""
+    @Published var vlessConfigInput = ""
     @Published var workflowSteps = TunnelController.makeDefaultWorkflowSteps()
     @Published var connectionHeadline = AppCopy(language: AppLanguageStore.shared.selectedLanguage).readyHeadline
     @Published var connectionDetail = AppCopy(language: AppLanguageStore.shared.selectedLanguage).connectionSubtitle

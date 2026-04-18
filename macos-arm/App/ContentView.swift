@@ -32,6 +32,7 @@ extension Color {
     static let inputBackground = Color.white
     static let inputBorder = Color(red: 226/255, green: 232/255, blue: 240/255)
     static let accentCyan = Color(red: 14/255, green: 165/255, blue: 233/255)
+    static let validationBorder = Color(red: 252/255, green: 165/255, blue: 165/255)
 }
 
 struct ContentView: View {
@@ -45,7 +46,7 @@ struct ContentView: View {
     @State private var isLanguageMenuExpanded = false
     @State private var isDetailsHovered = false
     @State private var isWorkflowHovered = false
-    @State private var isVlessMasked = true
+    @State private var isVlessMasked = false
     @State private var isPreparingDiagnosticDump = false
     @State private var diagnosticDumpStatusMessage = ""
 
@@ -77,6 +78,25 @@ struct ContentView: View {
         tunnelController.isBusy || tunnelController.isConnected
     }
 
+    private var showRequiredFieldHints: Bool {
+        !tunnelController.lastErrorDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var domainFieldNeedsAttention: Bool {
+        showRequiredFieldHints &&
+        tunnelController.whitelistDomainInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var ipFieldNeedsAttention: Bool {
+        showRequiredFieldHints &&
+        tunnelController.whitelistIPInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var configFieldNeedsAttention: Bool {
+        showRequiredFieldHints &&
+        tunnelController.vlessConfigInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -100,11 +120,26 @@ struct ContentView: View {
                     
                     HStack(spacing: 8) {
                         infoPill(text: "v1.2.1", icon: "info.circle.fill")
-                        infoPill(text: "by PK3NZO", icon: "person.fill")
+                        
+                        Button {
+                            if let url = URL(string: "https://github.com/PK3NZO/SNI-Spoofing-Client") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            infoPill(text: "by PK3NZO", icon: "person.fill")
+                        }
+                        .buttonStyle(.plain)
                         
                         Spacer()
                         
-                        infoPill(text: "Shoutout to patterniha for his great project", icon: "heart.fill")
+                        Button {
+                            if let url = URL(string: "https://github.com/patterniha/SNI-Spoofing") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            infoPill(text: "Shoutout to patterniha for his great project", icon: "heart.fill")
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.top, 4)
                 }
@@ -175,12 +210,24 @@ struct ContentView: View {
                     HStack(spacing: 16) {
                         configField(title: copy.allowlistDomainTitle) {
                             TextField(copy.allowlistDomainPlaceholder, text: $tunnelController.whitelistDomainInput)
+                                .textFieldStyle(
+                                    CleanTextFieldStyle(
+                                        borderColor: domainFieldNeedsAttention ? .validationBorder : .inputBorder,
+                                        fillColor: .inputBackground
+                                    )
+                                )
                                 .opacity(inputsLocked ? 0.6 : 1.0)
                                 .disabled(inputsLocked)
                         }
 
                         configField(title: copy.allowlistIPTitle) {
                             TextField(copy.allowlistIPPlaceholder, text: $tunnelController.whitelistIPInput)
+                                .textFieldStyle(
+                                    CleanTextFieldStyle(
+                                        borderColor: ipFieldNeedsAttention ? .validationBorder : .inputBorder,
+                                        fillColor: .inputBackground
+                                    )
+                                )
                                 .opacity(inputsLocked ? 0.6 : 1.0)
                                 .disabled(inputsLocked)
                         }
@@ -188,6 +235,15 @@ struct ContentView: View {
 
                     configField(title: copy.vlessConfigTitle) {
                         ZStack(alignment: .topLeading) {
+                            if tunnelController.vlessConfigInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Text(copy.vlessConfigPlaceholder)
+                                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(Color.textSecondary.opacity(0.65))
+                                    .padding(.horizontal, 18)
+                                    .padding(.top, 42)
+                                    .allowsHitTesting(false)
+                            }
+
                             // The actual TextEditor (always present for layout, but invisible/blurred when masked)
                             TextEditor(text: $tunnelController.vlessConfigInput)
                                 .font(.system(size: 14, weight: .medium, design: .monospaced))
@@ -230,39 +286,13 @@ struct ContentView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .help(isVlessMasked ? "Show Config" : "Hide Config")
-                                
-                                Button {
-                                    let pasteboard = NSPasteboard.general
-                                    if let content = pasteboard.string(forType: .string) {
-                                        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        let validPrefixes = ["vless://", "vmess://", "trojan://", "ss://"]
-                                        let isValidFormat = validPrefixes.contains { trimmed.lowercased().hasPrefix($0) }
-                                        
-                                        if isValidFormat && trimmed.count <= 10000 {
-                                            tunnelController.vlessConfigInput = trimmed
-                                        }
-                                    }
-                                } label: {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "plus.square.dashed")
-                                        Text("Paste")
-                                    }
-                                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                                    .foregroundStyle(inputsLocked ? Color.textSecondary : Color.accentCyan)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(inputsLocked ? Color.textSecondary.opacity(0.1) : Color.accentCyan.opacity(0.1))
-                                    .clipShape(Capsule())
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(inputsLocked)
                             }
                             .padding(6)
                             .frame(maxWidth: .infinity, alignment: .topTrailing)
                             
                             // Sharp Border (Always sharp, never blurred)
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color.inputBorder, lineWidth: 1)
+                                .stroke(configFieldNeedsAttention ? Color.validationBorder : Color.inputBorder, lineWidth: 1)
                                 .allowsHitTesting(false)
                             
                             if inputsLocked && !isVlessMasked {
@@ -277,6 +307,7 @@ struct ContentView: View {
                                 .fill(Color.inputBackground)
                         )
                         .animation(.easeInOut(duration: 0.2), value: isVlessMasked)
+                        .animation(.easeInOut(duration: 0.2), value: configFieldNeedsAttention)
                     }
                 }
 
@@ -586,7 +617,6 @@ struct ContentView: View {
             }
 
             content()
-                .textFieldStyle(CleanTextFieldStyle())
         }
     }
 
@@ -1299,6 +1329,14 @@ private struct CleanCard<Content: View>: View {
 }
 
 private struct CleanTextFieldStyle: TextFieldStyle {
+    let borderColor: Color
+    let fillColor: Color
+
+    init(borderColor: Color = .inputBorder, fillColor: Color = .inputBackground) {
+        self.borderColor = borderColor
+        self.fillColor = fillColor
+    }
+
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(.plain)
@@ -1308,11 +1346,11 @@ private struct CleanTextFieldStyle: TextFieldStyle {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.inputBackground)
+                    .fill(fillColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.inputBorder, lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             )
     }
 }
