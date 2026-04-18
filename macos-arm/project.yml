@@ -26,8 +26,9 @@ schemes:
       isShown: true
 settings:
   base:
-    DEVELOPMENT_TEAM: NMVD5BGX82
     SWIFT_VERSION: 5.0
+    MARKETING_VERSION: 1.2.1
+    CURRENT_PROJECT_VERSION: 121
 targets:
   SniSpoofingMac:
     type: application
@@ -56,6 +57,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: SNI-Spoofing Client
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: "14.0"
         NSPrincipalClass: NSApplication
     settings:
@@ -70,6 +73,7 @@ targets:
           - -lpcap
     dependencies:
       - sdk: NetworkExtension.framework
+      - target: SniProxyHelper
       - target: SniPacketTunnel
         embed: true
   SniProxyHelper:
@@ -107,6 +111,8 @@ targets:
       path: PacketTunnel/Info.plist
       properties:
         CFBundleDisplayName: SNI Packet Tunnel
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PacketTunnelProvider

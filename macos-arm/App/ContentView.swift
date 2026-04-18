@@ -58,6 +58,11 @@ struct ContentView: View {
         AppCopy(language: languageStore.selectedLanguage)
     }
 
+    private var appVersionLabel: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        return "v\(version ?? "1.2.1")"
+    }
+
     private enum StatusBadgeKind {
         case busy
         case connected
@@ -119,7 +124,7 @@ struct ContentView: View {
                     mainCard
                     
                     HStack(spacing: 8) {
-                        infoPill(text: "v1.2.1", icon: "info.circle.fill")
+                        infoPill(text: appVersionLabel, icon: "info.circle.fill")
                         
                         Button {
                             if let url = URL(string: "https://github.com/PK3NZO/SNI-Spoofing-Client") {

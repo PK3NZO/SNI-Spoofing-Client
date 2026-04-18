@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 VERSION="$(tr -d '\n' < "$PWD/VERSION")"
+NOTARY_PROFILE="${NOTARYTOOL_PROFILE:-}"
 
 normalize_arch() {
   local raw_arch="${1:-}"
@@ -27,24 +28,24 @@ if [ "${ARCH}" = "unsupported" ]; then
   exit 1
 fi
 
-./build_release.sh "${ARCH}"
-
-APP_PATH="$PWD/build/${ARCH}/Release/SniSpoofingMac.app"
-DIST_DIR="$PWD/dist"
-ZIP_PATH="${DIST_DIR}/SniSpoofingClient-macos-${ARCH}-v${VERSION}.zip"
-
-if [ ! -d "${APP_PATH}" ]; then
-  echo "Release app not found at: ${APP_PATH}" >&2
+if [ -z "${NOTARY_PROFILE}" ]; then
+  echo "NOTARYTOOL_PROFILE is required." >&2
+  echo "Example: export NOTARYTOOL_PROFILE='SniSpoofingNotary'" >&2
   exit 1
 fi
 
-mkdir -p "${DIST_DIR}"
-rm -f "${ZIP_PATH}"
+DMG_PATH="$PWD/dist/SniSpoofingClient-macos-${ARCH}-v${VERSION}.dmg"
+if [ ! -f "${DMG_PATH}" ]; then
+  echo "DMG not found at: ${DMG_PATH}" >&2
+  echo "Run ./package_dmg.sh ${ARCH} first." >&2
+  exit 1
+fi
 
-ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+xcrun notarytool submit "${DMG_PATH}" --keychain-profile "${NOTARY_PROFILE}" --wait
+xcrun stapler staple "${DMG_PATH}"
 
 echo
-echo "Release package ready:"
+echo "Notarized DMG ready:"
 echo "  arch: ${ARCH}"
 echo "  version: ${VERSION}"
-echo "  zip: ${ZIP_PATH}"
+echo "  dmg: ${DMG_PATH}"

@@ -1,37 +1,17 @@
-# macOS build
+# macOS Build Workspace
 
-In پوشه alan faghat scaffold nist; masir e native proxy baraye macOS baraye `arm64` va `x86_64` ham shoru shode.
+In پوشه source, scripts, va release tooling e macOS gharar darad.
 
-hadaf e in scaffold:
+## Supported architectures
 
-- host app e macOS dashte bashim
-- local listener e native shabih noskhe Windows dashte bashim
-- `PacketTunnelProvider` dashte bashim ta backend e mac ba `Network Extension` shoru beshe
-- project ro ba `xcodegen` tolid konim
-- debug/release build e joda baraye `arm64` va `x86_64` dashte bashim
+- `arm64`
+- `x86_64`
 
-### che chiz tamam shode
+## Version
 
-- project spec e `XcodeGen`
-- app e sade e SwiftUI
-- extension e `PacketTunnelProvider`
-- script e generate/build baraye `arm64` va `x86_64`
-- tunnel manager dar host app
-- shared config/message protocol beyn app va extension
-- provider status query az tariqe `sendProviderMessage`
-- native local proxy ruye `listenPort`
-- relay e socket dar host app
-- `libpcap` bridge baraye monitor/inject e packet ha
-- builder/parsing e packet baraye fake TLS ClientHello injection
+- `1.2.1`
 
-### che chiz baqi mande
-
-- entitlements va signing e dorost
-- test e runtime ruye mac ba dastresi root/admin
-- hardening e logic e bypass ruye interface haye mokhtalef
-- barresi دقیق‌تر e path e `PacketTunnelProvider` ya helper e privileged baraye distribution tamiz
-
-### estefade
+## Quick start
 
 ```bash
 cd macos-arm
@@ -40,7 +20,21 @@ cd macos-arm
 ./build_x86_64_debug.sh
 ```
 
-ya generic:
+## Release scripts
+
+```bash
+cd macos-arm
+./build_arm_release.sh
+./build_x86_64_release.sh
+./sign_release.sh arm64
+./sign_release.sh x86_64
+./package_dmg.sh arm64
+./package_dmg.sh x86_64
+./notarize_dmg.sh arm64
+./notarize_dmg.sh x86_64
+```
+
+## Generic scripts
 
 ```bash
 cd macos-arm
@@ -50,35 +44,23 @@ cd macos-arm
 ./build_release.sh x86_64
 ./package_release.sh arm64
 ./package_release.sh x86_64
+./package_dmg.sh arm64
+./package_dmg.sh x86_64
+./generate_checksums.sh
+./release_macos.sh arm64
+./release_macos.sh x86_64
 ```
 
-baraye run e helper e واقعی ba dastresi root:
+## Local helper run
 
 ```bash
 cd macos-arm
 ./run_proxy_helper.sh ../config.json
 ```
 
-ya mostaghim:
+## Notes
 
-```bash
-sudo ./build/$(uname -m)/Debug/sni-proxy-helper --config ../config.json
-```
-
-baraye kam o ziad kardan log:
-
-```json
-{
-  "LOG_LEVEL": "info"
-}
-```
-
-meghdar haye mojaz:
-
-- `debug`: hame chiz, monaseb e debug e packet
-- `info`: event haye asli mesl start/stop/bypass ready
-- `error`: faghat خطاها
-
-### note
-
-host app alan mitune config ro save kone, native proxy ro start/stop kone, tunnel manager ro ham negah dare, va az extension status begire. Bypass e mac alan ruye local listener + `libpcap` monitor/inject chalide shode. Baraye run e واقعی, app bayad ba dastresi root/admin ejra beshe چون capture/inject e packet bedune in dastresi momken nist. `PacketTunnelProvider` hanuz negah dashte shode ta phase ba’di baraye packaging/signing va control plane tameez tar dashte bashim.
+- signed/notarized public releases should use the DMG flow
+- helper and Xray are bundled per architecture
+- the public macOS release guide lives here:
+  - [../docs/macos-release-guide.md](../docs/macos-release-guide.md)

@@ -1,0 +1,24 @@
+changelog:
+  categories:
+    - title: UI and UX
+      labels:
+        - ui
+        - ux
+    - title: Protocols and Networking
+      labels:
+        - networking
+        - protocol
+    - title: Packaging and Release
+      labels:
+        - release
+        - packaging
+        - macos
+    - title: Fixes
+      labels:
+        - bug
+    - title: Documentation
+      labels:
+        - documentation
+  exclude:
+    labels:
+      - skip-changelog

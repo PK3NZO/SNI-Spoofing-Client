@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: https://github.com/PK3NZO/SNI-Spoofing-Client/security
+    about: Use GitHub Security Advisories for sensitive reports when available.

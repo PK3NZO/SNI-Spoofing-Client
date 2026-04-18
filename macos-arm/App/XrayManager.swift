@@ -1,6 +1,6 @@
 import Foundation
 
-class XrayManager: ObservableObject {
+final class XrayManager: ObservableObject, @unchecked Sendable {
     @Published var isDownloading = false
     @Published var downloadProgress: Double = 0.0
     @Published var isRunning = false

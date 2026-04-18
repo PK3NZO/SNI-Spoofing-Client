@@ -186,7 +186,9 @@ final class TunnelController: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.bestEffortShutdownForTermination()
+            Task { @MainActor [weak self] in
+                self?.bestEffortShutdownForTermination()
+            }
         }
         Task {
             await reloadManager()
@@ -2088,6 +2090,11 @@ final class TunnelController: ObservableObject {
 
     private static func runProcess(launchPath: String, arguments: [String], timeout: TimeInterval = 8) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
+            final class CompletionState: @unchecked Sendable {
+                let lock = NSLock()
+                var finished = false
+            }
+
             let process = Process()
             process.executableURL = URL(fileURLWithPath: launchPath)
             process.arguments = arguments
@@ -2097,14 +2104,13 @@ final class TunnelController: ObservableObject {
             process.standardOutput = stdout
             process.standardError = stderr
 
-            let stateLock = NSLock()
-            var finished = false
+            let completionState = CompletionState()
 
-            func finish(_ result: Result<String, Error>) {
-                stateLock.lock()
-                defer { stateLock.unlock() }
-                guard !finished else { return }
-                finished = true
+            @Sendable func finish(_ result: Result<String, Error>) {
+                completionState.lock.lock()
+                defer { completionState.lock.unlock() }
+                guard !completionState.finished else { return }
+                completionState.finished = true
                 process.terminationHandler = nil
                 continuation.resume(with: result)
             }
@@ -2347,6 +2353,11 @@ final class TunnelController: ObservableObject {
     }
 
     private static var helperBinaryURL: URL {
+        if let bundledHelperURL = Bundle.main.url(forResource: "sni-proxy-helper", withExtension: nil),
+           FileManager.default.isExecutableFile(atPath: bundledHelperURL.path) {
+            return bundledHelperURL
+        }
+
         let repoBuildCandidates = [
             projectRootURL.appendingPathComponent("macos-arm/build/\(buildArchitectureFolderName)/Debug/sni-proxy-helper"),
             projectRootURL.appendingPathComponent("macos-arm/build/Debug/sni-proxy-helper")

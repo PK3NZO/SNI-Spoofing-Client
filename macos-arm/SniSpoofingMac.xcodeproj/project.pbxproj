@@ -20,6 +20,7 @@
 		2F50D9D2500E30326B22B9B5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37DE60F22CF7E17CD76A432 /* ContentView.swift */; };
 		38AAF0788B485B3A73CE3564 /* TunnelMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F830596E4CFD3FE9F0EE12D /* TunnelMessages.swift */; };
 		3C187BB32D7D838913756502 /* xray-arm64.bin in Resources */ = {isa = PBXBuildFile; fileRef = EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */; };
+		3D6AABDDAC33759BF1326F15 /* SniProxyHelper in Resources */ = {isa = PBXBuildFile; fileRef = 5F2C8F868DD86B218D3A6C77 /* SniProxyHelper */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4A6BE616388BA474C54AFDD4 /* LibpcapBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = F9017512BD79F54ECFAD13E6 /* LibpcapBridge.m */; };
 		6443096813CBED4636DEE56E /* TunnelConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F576F52BEC4A3C8D5084AFB5 /* TunnelConfiguration.swift */; };
 		79F86017CF99B8C1775BB1FC /* LocalProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7282B8DA2DFEC6B37042B4 /* LocalProxyService.swift */; };
@@ -46,6 +47,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		295D7A964316BF9E2B4302DB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B8B801623E4BBC6A1F7C6A8E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9D6DC7D68B1C02EFE9A1F784;
+			remoteInfo = SniProxyHelper;
+		};
 		398C64CD5C0EE8E5AF59CFCC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B8B801623E4BBC6A1F7C6A8E /* Project object */;
@@ -246,6 +254,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				72F9183D83D8DC56C5EC7D2C /* PBXTargetDependency */,
 				2D966B5B82C1056C5996DF1B /* PBXTargetDependency */,
 			);
 			name = SniSpoofingMac;
@@ -282,15 +291,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					9D6DC7D68B1C02EFE9A1F784 = {
-						DevelopmentTeam = NMVD5BGX82;
-					};
 					9E033495211DA8B6B80DCC24 = {
-						DevelopmentTeam = NMVD5BGX82;
 						ProvisioningStyle = Automatic;
 					};
 					C69EF224301405652FB07BF8 = {
-						DevelopmentTeam = NMVD5BGX82;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -326,6 +330,7 @@
 				AF4B07590B87F611DA37558B /* flag_uk.svg in Resources */,
 				3C187BB32D7D838913756502 /* xray-arm64.bin in Resources */,
 				8912A511F491AA6DC539C9EC /* xray-x86_64.bin in Resources */,
+				3D6AABDDAC33759BF1326F15 /* SniProxyHelper in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,6 +393,11 @@
 			target = C69EF224301405652FB07BF8 /* SniPacketTunnel */;
 			targetProxy = 398C64CD5C0EE8E5AF59CFCC /* PBXContainerItemProxy */;
 		};
+		72F9183D83D8DC56C5EC7D2C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9D6DC7D68B1C02EFE9A1F784 /* SniProxyHelper */;
+			targetProxy = 295D7A964316BF9E2B4302DB /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -445,8 +455,8 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 121;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = NMVD5BGX82;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -458,6 +468,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.2.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -582,8 +593,8 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 121;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = NMVD5BGX82;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -601,6 +612,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.2.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
