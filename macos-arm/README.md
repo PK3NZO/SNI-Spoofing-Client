@@ -10,6 +10,7 @@ In پوشه source, scripts, va release tooling e macOS gharar darad.
 ## Version
 
 - `1.2.1`
+- minimum macOS: `13.3`
 
 ## Quick start
 

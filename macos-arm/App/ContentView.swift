@@ -156,12 +156,12 @@ struct ContentView: View {
         .sheet(isPresented: $isLogsPresented) {
             logsSheet
         }
-        .onChange(of: tunnelController.configuration.logLevel) { _, _ in
+        .onChange(of: tunnelController.configuration.logLevel) { _ in
             Task {
                 await tunnelController.applyLogLevelChangeImmediately()
             }
         }
-        .onChange(of: languageStore.selectedLanguage) { _, _ in
+        .onChange(of: languageStore.selectedLanguage) { _ in
             isLanguageMenuExpanded = false
             tunnelController.refreshLocalizedPresentation()
         }

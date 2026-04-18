@@ -40,11 +40,13 @@ main_build_args=(
   ARCHS="${ARCH}"
   ONLY_ACTIVE_ARCH=YES
   SYMROOT="${BUILD_ROOT}"
+  CODE_SIGNING_ALLOWED=NO
+  CODE_SIGNING_REQUIRED=NO
+  CODE_SIGN_IDENTITY=""
 )
 
 if [ "${ALLOW_UNSIGNED_APP_BUILD:-0}" = "1" ]; then
   echo "Unsigned release build requested. Tunnel mode distribution baraye user niaz be signing darad."
-  main_build_args+=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="")
 fi
 
 xcodebuild "${main_build_args[@]}" build

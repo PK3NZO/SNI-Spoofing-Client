@@ -2,7 +2,7 @@ name: SniSpoofingMac
 options:
   minimumXcodeGenVersion: 2.44.1
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "13.3"
 schemes:
   SniSpoofingMac:
     build:
@@ -59,7 +59,7 @@ targets:
         CFBundleDisplayName: SNI-Spoofing Client
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        LSMinimumSystemVersion: "14.0"
+        LSMinimumSystemVersion: "13.3"
         NSPrincipalClass: NSApplication
     settings:
       base:

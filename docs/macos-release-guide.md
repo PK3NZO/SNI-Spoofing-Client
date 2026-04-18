@@ -2,6 +2,10 @@
 
 This document covers the release flow for `SNI-Spoofing Client` on macOS.
 
+Minimum supported macOS release:
+
+- `13.3`
+
 ## 1. Architectures
 
 Two separate release tracks are supported:

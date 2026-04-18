@@ -3,7 +3,7 @@
 Native desktop client for running SNI-based DPI bypass workflows on macOS, with support for both `Proxy` and `Tunnel` modes.
 
 [![Version](https://img.shields.io/badge/version-1.2.1-2563eb.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-111827.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%2013.3%2B-111827.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-16a34a.svg)](LICENSE)
 
 ## English
@@ -47,7 +47,7 @@ Expected macOS assets for `v1.2.1`:
 
 ### macOS Requirements
 
-- macOS 14 or newer
+- macOS 13.3 or newer
 - Administrator access for privileged networking actions
 - Apple Silicon Mac for `arm64` release
 - Intel Mac for `x86_64` release
@@ -155,7 +155,7 @@ SNI-Spoofing Client یک اپلیکیشن native برای macOS است که بر
 
 ### نیازمندی‌ها
 
-- macOS 14 به بالا
+- macOS 13.3 به بالا
 - دسترسی Administrator برای بعضی عملیات شبکه
 - مک Apple Silicon برای نسخه `arm64`
 - مک Intel برای نسخه `x86_64`
