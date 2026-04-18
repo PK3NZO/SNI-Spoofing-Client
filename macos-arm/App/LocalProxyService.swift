@@ -212,7 +212,7 @@ final class LocalProxyService {
                 }
             }
 
-            syncQueue.async {
+            syncQueue.sync {
                 self.activeSessions[session.id] = session
                 self.lastLogLevel = .debug
                 self.lastDetail = "Accepted new client"

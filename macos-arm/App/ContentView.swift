@@ -43,6 +43,9 @@ struct ContentView: View {
     @State private var isDetailsExpanded = false
     @State private var isWorkflowExpanded = false
     @State private var isLanguageMenuExpanded = false
+    @State private var isDetailsHovered = false
+    @State private var isWorkflowHovered = false
+    @State private var isVlessMasked = true
 
     private var visibleLogEntries: [ProxyLogEntry] {
         tunnelController.helperLogEntries.filter { selectedLogFilter.matches($0) }
@@ -94,7 +97,7 @@ struct ContentView: View {
                     
                     HStack(spacing: 8) {
                         infoPill(text: "v1.2.1", icon: "info.circle.fill")
-                        infoPill(text: "PK3NZO", icon: "person.fill")
+                        infoPill(text: "by PK3NZO", icon: "person.fill")
                         
                         Spacer()
                         
@@ -167,32 +170,108 @@ struct ContentView: View {
                     HStack(spacing: 16) {
                         configField(title: copy.allowlistDomainTitle) {
                             TextField(copy.allowlistDomainPlaceholder, text: $tunnelController.whitelistDomainInput)
-                                .disabled(tunnelController.isBusy || tunnelController.isConnected)
+                                .opacity(inputsLocked ? 0.6 : 1.0)
+                                .disabled(inputsLocked)
                         }
 
                         configField(title: copy.allowlistIPTitle) {
                             TextField(copy.allowlistIPPlaceholder, text: $tunnelController.whitelistIPInput)
-                                .disabled(tunnelController.isBusy || tunnelController.isConnected)
+                                .opacity(inputsLocked ? 0.6 : 1.0)
+                                .disabled(inputsLocked)
                         }
                     }
 
                     configField(title: copy.vlessConfigTitle) {
-                        TextEditor(text: $tunnelController.vlessConfigInput)
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .scrollContentBackground(.hidden)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .frame(minHeight: 110)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color.inputBackground)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.inputBorder, lineWidth: 1)
-                            )
-                            .opacity(inputsLocked ? 0.65 : 1)
-                            .disabled(inputsLocked)
+                        ZStack(alignment: .topLeading) {
+                            // The actual TextEditor (always present for layout, but invisible/blurred when masked)
+                            TextEditor(text: $tunnelController.vlessConfigInput)
+                                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                .foregroundStyle(Color.textPrimary)
+                                .scrollContentBackground(.hidden)
+                                .padding(.horizontal, 12)
+                                .padding(.top, 34) // Make space for the top-right buttons
+                                .padding(.bottom, 10)
+                                .frame(minHeight: 110)
+                                .opacity(isVlessMasked ? 0.0 : (inputsLocked ? 0.6 : 1.0))
+                                .disabled(inputsLocked || isVlessMasked)
+                            
+                            // The "Smooth" Masked View (only shows when masked)
+                            if isVlessMasked {
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        maskedVlessText(tunnelController.vlessConfigInput)
+                                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                            .foregroundStyle(Color.textPrimary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.top, 38)
+                                            .padding(.bottom, 14)
+                                    }
+                                }
+                                .frame(height: 110)
+                                .allowsHitTesting(false)
+                            }
+                            
+                            // Top-Right Control Buttons Overlay
+                            HStack(spacing: 6) {
+                                Button {
+                                    isVlessMasked.toggle()
+                                } label: {
+                                    Image(systemName: isVlessMasked ? "eye.slash" : "eye")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(Color.textSecondary)
+                                        .frame(width: 24, height: 24)
+                                        .background(Color.white.opacity(0.8))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .help(isVlessMasked ? "Show Config" : "Hide Config")
+                                
+                                Button {
+                                    let pasteboard = NSPasteboard.general
+                                    if let content = pasteboard.string(forType: .string) {
+                                        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        let validPrefixes = ["vless://", "vmess://", "trojan://", "ss://"]
+                                        let isValidFormat = validPrefixes.contains { trimmed.lowercased().hasPrefix($0) }
+                                        
+                                        if isValidFormat && trimmed.count <= 10000 {
+                                            tunnelController.vlessConfigInput = trimmed
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "plus.square.dashed")
+                                        Text("Paste")
+                                    }
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .foregroundStyle(inputsLocked ? Color.textSecondary : Color.accentCyan)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(inputsLocked ? Color.textSecondary.opacity(0.1) : Color.accentCyan.opacity(0.1))
+                                    .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(inputsLocked)
+                            }
+                            .padding(6)
+                            .frame(maxWidth: .infinity, alignment: .topTrailing)
+                            
+                            // Sharp Border (Always sharp, never blurred)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.inputBorder, lineWidth: 1)
+                                .allowsHitTesting(false)
+                            
+                            if inputsLocked && !isVlessMasked {
+                                Color.white.opacity(0.01)
+                                    .onTapGesture {}
+                                    .onHover { _ in }
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.inputBackground)
+                        )
+                        .animation(.easeInOut(duration: 0.2), value: isVlessMasked)
                     }
                 }
 
@@ -205,14 +284,18 @@ struct ContentView: View {
                         title: copy.detailsTitle,
                         subtitle: tunnelController.connectionDetail,
                         isExpanded: isDetailsExpanded,
-                        action: { isDetailsExpanded.toggle() }
+                        isHovered: isDetailsHovered,
+                        action: { isDetailsExpanded.toggle() },
+                        onHover: { hovering in isDetailsHovered = hovering }
                     )
 
                     compactSectionButton(
                         title: copy.workflowTitle,
                         subtitle: copy.workflowSubtitle(count: tunnelController.workflowSteps.count),
                         isExpanded: isWorkflowExpanded,
-                        action: { isWorkflowExpanded.toggle() }
+                        isHovered: isWorkflowHovered,
+                        action: { isWorkflowExpanded.toggle() },
+                        onHover: { hovering in isWorkflowHovered = hovering }
                     )
                 }
 
@@ -344,7 +427,9 @@ struct ContentView: View {
         title: String,
         subtitle: String,
         isExpanded: Bool,
-        action: @escaping () -> Void
+        isHovered: Bool,
+        action: @escaping () -> Void,
+        onHover: @escaping (Bool) -> Void
     ) -> some View {
         Button(action: action) {
             HStack(alignment: .center, spacing: 12) {
@@ -373,12 +458,14 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(red: 248/255, green: 250/255, blue: 252/255))
+                    .fill(isHovered ? Color.white : Color(red: 248/255, green: 250/255, blue: 252/255))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.inputBorder, lineWidth: 1)
+                    .stroke(isHovered ? Color.accentCyan.opacity(0.3) : Color.inputBorder, lineWidth: 1)
             )
+            .shadow(color: Color.black.opacity(isHovered ? 0.08 : 0), radius: 10, x: 0, y: 5)
+            .onHover(perform: onHover)
         }
         .buttonStyle(.plain)
     }
@@ -472,11 +559,21 @@ struct ContentView: View {
         .presentationBackground(.clear)
     }
 
-    private func configField<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func configField<Content: View, Trailing: View>(
+        title: String,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() },
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.textSecondary)
+            HStack {
+                Text(title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.textSecondary)
+                
+                Spacer()
+                
+                trailing()
+            }
 
             content()
                 .textFieldStyle(CleanTextFieldStyle())
@@ -659,6 +756,35 @@ struct ContentView: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+    }
+
+    
+    private func maskedVlessText(_ input: String) -> some View {
+        guard !input.isEmpty else { return Text("") }
+        
+        var masked = input
+        
+        // Mask UUID (between vless:// and @)
+        if let vlessRange = masked.range(of: "vless://"),
+           let atRange = masked.range(of: "@"),
+           vlessRange.upperBound < atRange.lowerBound {
+            let uuidRange = vlessRange.upperBound..<atRange.lowerBound
+            masked.replaceSubrange(uuidRange, with: "••••••••-••••-••••-••••-••••••••••••")
+        }
+        
+        // Mask Host and SNI
+        let sensitiveKeys = ["host=", "sni="]
+        for key in sensitiveKeys {
+            if let keyRange = masked.range(of: key) {
+                let valueStart = keyRange.upperBound
+                let valueEnd = masked[valueStart...].firstIndex(where: { $0 == "&" || $0 == "#" || $0 == " " }) ?? masked.endIndex
+                if valueStart < valueEnd {
+                    masked.replaceSubrange(valueStart..<valueEnd, with: "••••••••••••")
+                }
+            }
+        }
+        
+        return Text(masked)
     }
 
     private func infoPill(text: String, icon: String) -> some View {
@@ -1117,50 +1243,131 @@ struct ActiveProxyStatsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 12) {
-                statCard(title: copy.connectionsStatLabel, value: "\(tunnelController.proxyConnectionCount)", icon: "link.circle.fill", color: Color.accentCyan)
-                statCard(title: copy.uploadStatLabel, value: formatBytes(tunnelController.proxyUploadSpeed) + "/s", icon: "arrow.up.circle.fill", color: Color.blue)
-                statCard(title: copy.downloadStatLabel, value: formatBytes(tunnelController.proxyDownloadSpeed) + "/s", icon: "arrow.down.circle.fill", color: Color.green)
-            }
+        HStack(spacing: 8) {
+            LiveStatCard(
+                title: copy.downloadStatLabel,
+                value: formatBytes(tunnelController.proxyDownloadSpeed) + "/s",
+                icon: "arrow.down",
+                color: Color(red: 34/255, green: 197/255, blue: 94/255), // Emerald Green
+                speed: tunnelController.proxyDownloadSpeed
+            )
 
+            LiveStatCard(
+                title: copy.uploadStatLabel,
+                value: formatBytes(tunnelController.proxyUploadSpeed) + "/s",
+                icon: "arrow.up",
+                color: Color.blue,
+                speed: tunnelController.proxyUploadSpeed
+            )
+            
+            LiveStatCard(
+                title: "Total Usage",
+                value: formatTotalBytes(tunnelController.proxyTotalBytes),
+                icon: "chart.bar.fill",
+                color: Color.orange,
+                speed: 0 // No flowing animation for total
+            )
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
     }
-    
-    private func statCard(title: String, value: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .foregroundStyle(color)
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.textSecondary)
-            }
-            Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.textPrimary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(red: 248/255, green: 250/255, blue: 252/255))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.inputBorder, lineWidth: 1)
-        )
+
+    private func formatTotalBytes(_ bytes: Int) -> String {
+        if bytes < 1024 { return "\(bytes) B" }
+        let exp = Int(log2(Double(bytes)) / 10)
+        let units = ["KB", "MB", "GB", "TB", "PB"]
+        let value = Double(bytes) / pow(1024, Double(exp))
+        return String(format: "%.2f %@", value, units[exp - 1])
     }
     
     private func formatBytes(_ bytes: Int) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
-        formatter.countStyle = .file
-        formatter.includesUnit = true
-        formatter.isAdaptive = true
-        return formatter.string(fromByteCount: Int64(bytes))
+        if bytes < 1024 {
+            return "\(bytes) B"
+        }
+        let exp = Int(log2(Double(bytes)) / 10)
+        let units = ["KB", "MB", "GB", "TB", "PB", "EB"]
+        let value = Double(bytes) / pow(1024, Double(exp))
+        return String(format: "%.1f %@", value, units[exp - 1])
     }
-    
+}
+
+struct LiveStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    let speed: Int
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                LiveTrafficIcon(icon: icon, color: color, speed: speed)
+                
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.textSecondary)
+            }
+            
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.textPrimary)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(red: 248/255, green: 250/255, blue: 252/255))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.inputBorder, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 4)
+    }
+}
+
+struct LiveTrafficIcon: View {
+    let icon: String
+    let color: Color
+    let speed: Int
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { timeline in
+            let phase = timeline.date.timeIntervalSinceReferenceDate
+            // Animation speed scales with traffic speed (max out at a reasonable visual rate)
+            let baseSpeed = 1.5
+            let trafficFactor = min(Double(speed) / 500_000.0, 5.0) // Scale up to 500KB/s
+            let totalSpeed = baseSpeed + trafficFactor
+            
+            let offset = (phase * totalSpeed).truncatingRemainder(dividingBy: 1.0)
+            
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 28, height: 28)
+                
+                // Animated arrows flowing
+                VStack(spacing: -4) {
+                    ForEach(0..<2) { i in
+                        Image(systemName: icon)
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(color)
+                            .offset(y: CGFloat((Double(i) - offset) * 12))
+                            .opacity(opacity(for: Double(i) - offset))
+                    }
+                }
+                .frame(width: 20, height: 18)
+                .clipped()
+            }
+        }
+    }
+
+    private func opacity(for offset: Double) -> Double {
+        // Fade in at top, fade out at bottom
+        if offset < 0 { return 1.0 + offset }
+        if offset > 1.0 { return 2.0 - offset }
+        return 1.0
+    }
 }

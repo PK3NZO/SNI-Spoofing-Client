@@ -111,6 +111,7 @@ final class TunnelController: ObservableObject {
     @Published var proxyConnectionCount = 0
     @Published var proxyBytesUploaded = 0
     @Published var proxyBytesDownloaded = 0
+    @Published var proxyTotalBytes = 0
     @Published var proxyUploadSpeed = 0
     @Published var proxyDownloadSpeed = 0
     @Published var proxyInterfaceDescription = "-"
@@ -1137,7 +1138,7 @@ final class TunnelController: ObservableObject {
 
     private func startHelperLogPolling() {
         helperLogTimer?.invalidate()
-        helperLogTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { [weak self] _ in
+        helperLogTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.pollHelperLogs()
             }
@@ -1349,17 +1350,31 @@ final class TunnelController: ObservableObject {
             lines.append("  - \(step.key.rawValue) [\(step.state.rawValue)]: \(step.detail)")
         }
 
-        lines.append("Recent app logs:")
-        for entry in helperLogEntries.suffix(120) {
+        lines.append("Recent app logs (last 500):")
+        for entry in helperLogEntries.suffix(500) {
             lines.append("  [\(entry.level.rawValue.uppercased())] \(logFormatter.string(from: entry.timestamp)) [\(entry.source)] \(entry.message)")
         }
 
         let xraySnapshot = xrayManager.recentOutputSnapshot().trimmingCharacters(in: .whitespacesAndNewlines)
-        lines.append("Xray snapshot:")
+        lines.append("Xray snapshot (last 8KB):")
         lines.append(xraySnapshot.isEmpty ? "  (empty)" : "  \(xraySnapshot.replacingOccurrences(of: "\n", with: "\n  "))")
 
         let helperLogPath = Self.helperLogURL.path
         lines.append("Helper log path: \(helperLogPath)")
+        
+        lines.append("Raw Helper log tail (last 50 lines):")
+        if let logTail = try? Self.runProcess(launchPath: "/usr/bin/tail", arguments: ["-n", "50", helperLogPath]) {
+             lines.append(logTail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "  (empty)" : "  \(logTail.replacingOccurrences(of: "\n", with: "\n  "))")
+        } else {
+             lines.append("  (failed to read log file)")
+        }
+
+        lines.append("Process status:")
+        if let psHelper = try? Self.runProcess(launchPath: "/bin/ps", arguments: ["aux", "-c"]) {
+            let helperLines = psHelper.split(separator: "\n").filter { $0.contains("helper") || $0.contains("xray") }
+            lines.append(helperLines.isEmpty ? "  (no helper/xray found in ps)" : "  \(helperLines.joined(separator: "\n  "))")
+        }
+
         lines.append("scutil --proxy:")
         if let proxySnapshot = try? Self.runProcess(launchPath: "/usr/sbin/scutil", arguments: ["--proxy"]) {
             lines.append(proxySnapshot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "  (empty)" : "  \(proxySnapshot.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\n", with: "\n  "))")
@@ -1458,7 +1473,8 @@ final class TunnelController: ObservableObject {
     private func updateSpeeds(up: Int, down: Int) {
         let now = Date()
         let dt = now.timeIntervalSince(lastSpeedUpdate)
-        if dt >= 1.0 {
+        // Update speeds at least every 0.3s for a "live" feel
+        if dt >= 0.3 {
             proxyUploadSpeed = max(0, Int(Double(up - lastBytesUploaded) / dt))
             proxyDownloadSpeed = max(0, Int(Double(down - lastBytesDownloaded) / dt))
             lastBytesUploaded = up
@@ -1467,6 +1483,7 @@ final class TunnelController: ObservableObject {
         }
         proxyBytesUploaded = up
         proxyBytesDownloaded = down
+        proxyTotalBytes = up + down
     }
 
     private static func describeConnectionStatus(_ status: NEVPNStatus) -> String {
@@ -1961,12 +1978,17 @@ final class TunnelController: ObservableObject {
     }
 
     private static func extractValue(for key: String, in line: String) -> String? {
-        guard let range = line.range(of: "\(key)=") else {
-            return nil
+        // More robust parsing: look for key=value or key: value
+        let patterns = ["\(key)=", "\(key): "]
+        for pattern in patterns {
+            if let range = line.range(of: pattern) {
+                let tail = line[range.upperBound...]
+                // Stop at space, comma, or end of string
+                let splitIndex = tail.firstIndex(where: { $0 == " " || $0 == "," }) ?? tail.endIndex
+                return String(tail[..<splitIndex])
+            }
         }
-        let tail = line[range.upperBound...]
-        let splitIndex = tail.firstIndex(of: " ") ?? tail.endIndex
-        return String(tail[..<splitIndex])
+        return nil
     }
 
     private static func extractDetail(in line: String) -> String? {
