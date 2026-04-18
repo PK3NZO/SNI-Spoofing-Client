@@ -1,6 +1,6 @@
-# macOS ARM port
+# macOS build
 
-In پوشه alan faghat scaffold nist; masir e native proxy baraye macOS ARM ham shoru shode.
+In پوشه alan faghat scaffold nist; masir e native proxy baraye macOS baraye `arm64` va `x86_64` ham shoru shode.
 
 hadaf e in scaffold:
 
@@ -8,14 +8,14 @@ hadaf e in scaffold:
 - local listener e native shabih noskhe Windows dashte bashim
 - `PacketTunnelProvider` dashte bashim ta backend e mac ba `Network Extension` shoru beshe
 - project ro ba `xcodegen` tolid konim
-- فعلا faghat `arm64` target konim
+- debug/release build e joda baraye `arm64` va `x86_64` dashte bashim
 
 ### che chiz tamam shode
 
 - project spec e `XcodeGen`
 - app e sade e SwiftUI
 - extension e `PacketTunnelProvider`
-- script e generate/build baraye `arm64`
+- script e generate/build baraye `arm64` va `x86_64`
 - tunnel manager dar host app
 - shared config/message protocol beyn app va extension
 - provider status query az tariqe `sendProviderMessage`
@@ -37,6 +37,19 @@ hadaf e in scaffold:
 cd macos-arm
 ./generate_xcode_project.sh
 ./build_arm_debug.sh
+./build_x86_64_debug.sh
+```
+
+ya generic:
+
+```bash
+cd macos-arm
+./build_debug.sh arm64
+./build_debug.sh x86_64
+./build_release.sh arm64
+./build_release.sh x86_64
+./package_release.sh arm64
+./package_release.sh x86_64
 ```
 
 baraye run e helper e واقعی ba dastresi root:
@@ -49,7 +62,7 @@ cd macos-arm
 ya mostaghim:
 
 ```bash
-sudo ./build/Debug/sni-proxy-helper --config ../config.json
+sudo ./build/$(uname -m)/Debug/sni-proxy-helper --config ../config.json
 ```
 
 baraye kam o ziad kardan log:

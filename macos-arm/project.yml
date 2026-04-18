@@ -48,7 +48,8 @@ targets:
       - path: Shared/TunnelConfiguration.swift
       - path: Shared/TunnelMessages.swift
       - path: Shared/TLSClientHelloBuilder.swift
-      - path: App/Resources/xray.bin
+      - path: App/Resources/xray-arm64.bin
+      - path: App/Resources/xray-x86_64.bin
       - path: App/Resources/flag_uk.svg
       - path: App/Resources/flag_ir.svg
     info:

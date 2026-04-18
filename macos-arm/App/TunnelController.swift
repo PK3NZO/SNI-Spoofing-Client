@@ -178,6 +178,7 @@ final class TunnelController: ObservableObject {
 
     init() {
         helperLogPathDescription = Self.helperLogURL.path
+        resetLogStateForFreshStart() // Ensure we start with a clean log view
         refreshHelperState()
         startHelperLogPolling()
         terminationObserver = NotificationCenter.default.addObserver(
@@ -2335,17 +2336,31 @@ final class TunnelController: ObservableObject {
         FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/SniSpoofingMac", isDirectory: true)
 
+    private static var buildArchitectureFolderName: String {
+        #if arch(arm64)
+        "arm64"
+        #elseif arch(x86_64)
+        "x86_64"
+        #else
+        "unknown"
+        #endif
+    }
+
     private static var helperBinaryURL: URL {
-        let repoBuildURL = projectRootURL.appendingPathComponent("macos-arm/build/Debug/sni-proxy-helper")
-        if FileManager.default.isExecutableFile(atPath: repoBuildURL.path) {
-            return repoBuildURL
+        let repoBuildCandidates = [
+            projectRootURL.appendingPathComponent("macos-arm/build/\(buildArchitectureFolderName)/Debug/sni-proxy-helper"),
+            projectRootURL.appendingPathComponent("macos-arm/build/Debug/sni-proxy-helper")
+        ]
+
+        for candidate in repoBuildCandidates where FileManager.default.isExecutableFile(atPath: candidate.path) {
+            return candidate
         }
 
         if let derivedDataURL = latestDerivedDataHelperBinaryURL() {
             return derivedDataURL
         }
 
-        return repoBuildURL
+        return repoBuildCandidates[0]
     }
 
     private static let helperConfigURL =

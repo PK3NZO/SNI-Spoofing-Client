@@ -18,13 +18,14 @@
 		2535B92207E6506307D02574 /* SystemNetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76A4535F52DD3157BA11C1CC /* SystemNetworkUtils.swift */; };
 		2CDABCA32E22222B028DEFA6 /* SniPacketTunnel.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5CA53E8398A3CB1E4328F457 /* SniPacketTunnel.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2F50D9D2500E30326B22B9B5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37DE60F22CF7E17CD76A432 /* ContentView.swift */; };
-		360915351C95404CA6A28718 /* xray.bin in Resources */ = {isa = PBXBuildFile; fileRef = C87DBE5D24134DA411999E63 /* xray.bin */; };
 		38AAF0788B485B3A73CE3564 /* TunnelMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F830596E4CFD3FE9F0EE12D /* TunnelMessages.swift */; };
+		3C187BB32D7D838913756502 /* xray-arm64.bin in Resources */ = {isa = PBXBuildFile; fileRef = EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */; };
 		4A6BE616388BA474C54AFDD4 /* LibpcapBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = F9017512BD79F54ECFAD13E6 /* LibpcapBridge.m */; };
 		6443096813CBED4636DEE56E /* TunnelConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = F576F52BEC4A3C8D5084AFB5 /* TunnelConfiguration.swift */; };
 		79F86017CF99B8C1775BB1FC /* LocalProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7282B8DA2DFEC6B37042B4 /* LocalProxyService.swift */; };
 		81CACA0D093687E45FB909A5 /* TLSClientHelloBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E4641830D6DDF39260EA78 /* TLSClientHelloBuilder.swift */; };
 		8403A4CBE80D32A451B0E99E /* XrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CFFE4D0DBFEDFC54ED7CD2 /* XrayManager.swift */; };
+		8912A511F491AA6DC539C9EC /* xray-x86_64.bin in Resources */ = {isa = PBXBuildFile; fileRef = CEC8811B796A95B796D72122 /* xray-x86_64.bin */; };
 		909F320DB9695AE77D92CD5D /* LocalProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7282B8DA2DFEC6B37042B4 /* LocalProxyService.swift */; };
 		9FCB1FA561C95E5867412C1C /* PacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6AD144AAB5F4CE30D2DB0D5 /* PacketTunnelProvider.swift */; };
 		A036507874EA9C1D5C351995 /* RawPacketSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E160D64E473752FB9F09E415 /* RawPacketSupport.swift */; };
@@ -89,12 +90,13 @@
 		AE7282B8DA2DFEC6B37042B4 /* LocalProxyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProxyService.swift; sourceTree = "<group>"; };
 		B834A547DAD5DEB7A07C2A35 /* TunnelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelController.swift; sourceTree = "<group>"; };
 		C1BF2F05C2087FD8B9087974 /* SniSpoofingMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SniSpoofingMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C87DBE5D24134DA411999E63 /* xray.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = xray.bin; sourceTree = "<group>"; };
+		CEC8811B796A95B796D72122 /* xray-x86_64.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "xray-x86_64.bin"; sourceTree = "<group>"; };
 		D37DE60F22CF7E17CD76A432 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E06C6BB3A8BA83C74CA0C892 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E160D64E473752FB9F09E415 /* RawPacketSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawPacketSupport.swift; sourceTree = "<group>"; };
 		E4E4641830D6DDF39260EA78 /* TLSClientHelloBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLSClientHelloBuilder.swift; sourceTree = "<group>"; };
 		ED44EA7EB239F4C95A706373 /* flag_ir.svg */ = {isa = PBXFileReference; path = flag_ir.svg; sourceTree = "<group>"; };
+		EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "xray-arm64.bin"; sourceTree = "<group>"; };
 		F576F52BEC4A3C8D5084AFB5 /* TunnelConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelConfiguration.swift; sourceTree = "<group>"; };
 		F9017512BD79F54ECFAD13E6 /* LibpcapBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LibpcapBridge.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -181,7 +183,8 @@
 			children = (
 				ED44EA7EB239F4C95A706373 /* flag_ir.svg */,
 				4AE6185A21C33AE0DB29BAC1 /* flag_uk.svg */,
-				C87DBE5D24134DA411999E63 /* xray.bin */,
+				EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */,
+				CEC8811B796A95B796D72122 /* xray-x86_64.bin */,
 			);
 			name = Resources;
 			path = App/Resources;
@@ -321,7 +324,8 @@
 				BCA761FF59821B44F86F4BF9 /* Assets.xcassets in Resources */,
 				00A07BEFD5009A2B79055DE2 /* flag_ir.svg in Resources */,
 				AF4B07590B87F611DA37558B /* flag_uk.svg in Resources */,
-				360915351C95404CA6A28718 /* xray.bin in Resources */,
+				3C187BB32D7D838913756502 /* xray-arm64.bin in Resources */,
+				8912A511F491AA6DC539C9EC /* xray-x86_64.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

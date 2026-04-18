@@ -23,9 +23,27 @@ class XrayManager: ObservableObject {
         xrayBaseURL.appendingPathComponent("xray-config.json")
     }
 
+    private var preferredBundledXrayBasename: String {
+        #if arch(arm64)
+        "xray-arm64"
+        #elseif arch(x86_64)
+        "xray-x86_64"
+        #else
+        "xray"
+        #endif
+    }
+
     private var bundledXrayURL: URL? {
-        if let exactName = Bundle.main.url(forResource: "xray", withExtension: "bin") {
+        if let exactName = Bundle.main.url(forResource: preferredBundledXrayBasename, withExtension: "bin") {
             return exactName
+        }
+
+        if let legacyName = Bundle.main.url(forResource: "xray", withExtension: "bin") {
+            return legacyName
+        }
+
+        if let rawName = Bundle.main.url(forResource: preferredBundledXrayBasename, withExtension: nil) {
+            return rawName
         }
 
         return Bundle.main.url(forResource: "xray", withExtension: nil)
