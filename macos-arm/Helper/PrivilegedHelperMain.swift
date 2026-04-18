@@ -115,7 +115,7 @@ private struct HelperOptions {
     static let usageText = """
     Usage:
       sudo ./sni-proxy-helper --config /path/to/config.json
-      sudo ./sni-proxy-helper --listen-host 0.0.0.0 --listen-port 40443 --connect-ip 104.19.229.21 --connect-port 443 --fake-sni hcaptcha.com --log-level info
+      sudo ./sni-proxy-helper --listen-host 0.0.0.0 --listen-port <dynamic-port> --connect-ip 104.19.229.21 --connect-port 443 --fake-sni hcaptcha.com --log-level info
     """
 
     static func parse(arguments: [String]) throws -> HelperOptions {

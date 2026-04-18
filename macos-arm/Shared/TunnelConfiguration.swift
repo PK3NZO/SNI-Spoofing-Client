@@ -49,6 +49,7 @@ enum AppConnectionMode: String, Codable, Equatable, CaseIterable, Identifiable {
 
 struct TunnelConfiguration: Codable, Equatable {
     static let providerBundleIdentifier = "com.local.sni.macos.packet-tunnel"
+    // Fallback only. Real helper port is chosen dynamically per connection attempt.
     static let stageOneProxyPort = 40443
     static let fixedSocksProxyPort = 20000
     static let fixedHTTPProxyPort = 30000

@@ -34,4 +34,26 @@ echo "helper path: ${HELPER_PATH}"
 echo "config path: ${CONFIG_PATH}"
 echo "dar hal ejra ba sudo..."
 
-exec sudo "${HELPER_PATH}" --config "${CONFIG_PATH}" "$@"
+helper_pid=""
+
+cleanup() {
+  if [ -n "${helper_pid}" ] && kill -0 "${helper_pid}" 2>/dev/null; then
+    echo
+    echo "stopping helper pid=${helper_pid} ..."
+    sudo kill -TERM "${helper_pid}" 2>/dev/null || true
+
+    for _ in 1 2 3 4 5; do
+      kill -0 "${helper_pid}" 2>/dev/null || break
+      sleep 0.2
+    done
+
+    sudo kill -KILL "${helper_pid}" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT HUP INT TERM
+
+sudo -v
+sudo "${HELPER_PATH}" --config "${CONFIG_PATH}" "$@" &
+helper_pid=$!
+wait "${helper_pid}"

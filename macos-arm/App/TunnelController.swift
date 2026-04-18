@@ -1,6 +1,7 @@
 import Foundation
 import NetworkExtension
 import AppKit
+import Darwin
 
 struct ProxyLogEntry: Identifiable, Equatable {
     let id = UUID()
@@ -65,6 +66,15 @@ private struct DNSConfigurationSnapshot {
     let services: [DNSServiceSnapshot]
 }
 
+private struct ConnectionResourceState {
+    var mode: AppConnectionMode
+    var helperStarted = false
+    var xrayStarted = false
+    var systemProxyEnabled = false
+    var tunnelStarted = false
+    var dnsApplied = false
+}
+
 private enum ConnectionWorkflowError: LocalizedError {
     case validation(String)
     case localProxy(String)
@@ -90,6 +100,13 @@ private enum ConnectionWorkflowError: LocalizedError {
 
 @MainActor
 final class TunnelController: ObservableObject {
+    enum ConnectionOperationState {
+        case idle
+        case connecting
+        case cancellingConnect
+        case disconnecting
+    }
+
     struct DiagnosticDumpArtifact {
         let text: String
         let fileURL: URL
@@ -126,6 +143,7 @@ final class TunnelController: ObservableObject {
     @Published var helperLogPathDescription = "-"
     @Published var lastErrorDescription = ""
     @Published var isBusy = false
+    @Published private(set) var connectionOperation: ConnectionOperationState = .idle
     @Published var isPrivilegedHelperRunning = false
 
     private let xrayManager = XrayManager.shared
@@ -143,6 +161,7 @@ final class TunnelController: ObservableObject {
     private let maxLogEntries = 240
     private var activeConnectionContext: ActiveConnectionContext?
     private var activeDNSConfigurationSnapshot: DNSConfigurationSnapshot?
+    private var connectionWorkflowTask: Task<Void, Never>?
     
     private var lastSpeedUpdate = Date()
     private var lastTrafficUpdate = Date()
@@ -362,24 +381,42 @@ final class TunnelController: ObservableObject {
     }
 
     func connectEmbeddedFlow() {
-        guard !isBusy else { return }
+        guard !isBusy, connectionWorkflowTask == nil else { return }
         isBusy = true
-        Task {
+        connectionOperation = .connecting
+        let task = Task { [weak self] in
+            guard let self else { return }
             await performEmbeddedConnection()
         }
+        connectionWorkflowTask = task
     }
 
     func disconnectEmbeddedFlow() {
         guard !isBusy else { return }
         isBusy = true
+        connectionOperation = .disconnecting
         Task {
             await disconnectWorkflow(preserveStatusMessage: false)
         }
     }
 
+    func cancelConnectAttempt() {
+        guard connectionOperation == .connecting, let connectionWorkflowTask else { return }
+        connectionOperation = .cancellingConnect
+        connectionHeadline = copy.cancellingConnectionHeadline
+        connectionDetail = copy.cancellingConnectionDetail
+        lastErrorDescription = ""
+        appendLog(level: .info, source: "app", message: "Connection cancel requested")
+        connectionWorkflowTask.cancel()
+    }
+
     private func performEmbeddedConnection() async {
         isBusy = true
-        defer { isBusy = false }
+        defer {
+            isBusy = false
+            connectionWorkflowTask = nil
+            connectionOperation = .idle
+        }
 
         let connectionMode = selectedConnectionMode
         lastErrorDescription = ""
@@ -391,18 +428,21 @@ final class TunnelController: ObservableObject {
         lastProbeDescription = "-"
         originalServerSummary = "-"
         routeManagerSummary = "-"
+        var startedResources = ConnectionResourceState(mode: connectionMode)
 
         do {
             if isConnected || isPrivilegedHelperRunning || xrayManager.isRunning {
                 try await disconnectWorkflowResources()
             }
+            try Task.checkCancellation()
 
             let draft = try validateConnectionDraft()
             updateWorkflowStep(.whitelist, state: .success, detail: "\(draft.whitelistDomain) -> \(draft.whitelistIP):\(draft.whitelistPort)")
             updateWorkflowStep(.vless, state: .success, detail: "\(draft.vless.remark) | \(draft.vless.network.uppercased())/\(draft.vless.security.uppercased())")
             let dnsServers = try await Self.discoverDNSServers()
+            try Task.checkCancellation()
 
-            let localProxyPort = TunnelConfiguration.stageOneProxyPort
+            let localProxyPort = try Self.reserveAvailableLocalTCPPort()
             let socksPort = TunnelConfiguration.fixedSocksProxyPort
             let httpPort = TunnelConfiguration.fixedHTTPProxyPort
 
@@ -426,17 +466,6 @@ final class TunnelController: ObservableObject {
             originalServerSummary = "\(draft.vless.originalAddress):\(draft.vless.originalPort) | \(draft.vless.remark)"
             let dnsSummary = dnsServers.isEmpty ? "none" : dnsServers.joined(separator: ",")
             appendLog(level: .debug, source: "provider", message: "Discovered DNS servers | \(dnsSummary)")
-
-            updateWorkflowStep(.localProxy, state: .running, detail: "Starting helper on \(configuration.listenHost):\(localProxyPort)")
-            connectionHeadline = copy.startingLocalProxyHeadline
-            connectionDetail = copy.localProxyStartingDetail
-            do {
-                try await startPrivilegedHelperInternal()
-                try await waitForHelperReadiness()
-            } catch {
-                throw ConnectionWorkflowError.localProxy(error.localizedDescription)
-            }
-            updateWorkflowStep(.localProxy, state: .success, detail: copy.helperStartedDetail(host: configuration.listenHost, port: localProxyPort))
 
             updateWorkflowStep(.xray, state: .running, detail: "Starting Xray with the embedded config")
             connectionHeadline = copy.startingXrayHeadline
@@ -463,8 +492,23 @@ final class TunnelController: ObservableObject {
                 let detail = xrayOutput.isEmpty ? error.localizedDescription : xrayOutput
                 throw ConnectionWorkflowError.xray(detail)
             }
+            startedResources.xrayStarted = true
+            try Task.checkCancellation()
             appendLog(level: .info, source: "xray", message: "Embedded Xray started | socks=127.0.0.1:\(socksPort) | http=127.0.0.1:\(httpPort)")
             updateWorkflowStep(.xray, state: .success, detail: copy.xrayStartedDetail(httpPort: httpPort, socksPort: socksPort))
+
+            updateWorkflowStep(.localProxy, state: .running, detail: "Starting helper on \(configuration.listenHost):\(localProxyPort)")
+            connectionHeadline = copy.startingLocalProxyHeadline
+            connectionDetail = copy.localProxyStartingDetail
+            do {
+                try await startPrivilegedHelperInternal()
+                startedResources.helperStarted = true
+                try await waitForHelperReadiness()
+            } catch {
+                throw ConnectionWorkflowError.localProxy(error.localizedDescription)
+            }
+            try Task.checkCancellation()
+            updateWorkflowStep(.localProxy, state: .success, detail: copy.helperStartedDetail(host: configuration.listenHost, port: localProxyPort))
 
             let routeContext: [String]
             switch connectionMode {
@@ -473,6 +517,7 @@ final class TunnelController: ObservableObject {
                 connectionHeadline = copy.enablingProxyRouteHeadline
                 connectionDetail = copy.systemProxyDetail
                 routeContext = try await enableSystemProxy(httpPort: httpPort, socksPort: socksPort)
+                startedResources.systemProxyEnabled = true
                 routeManagerSummary = "System proxy | \(routeContext.joined(separator: ", "))"
                 updateWorkflowStep(.systemProxy, state: .success, detail: routeContext.joined(separator: ", "))
             case .tunnel:
@@ -480,10 +525,13 @@ final class TunnelController: ObservableObject {
                 connectionHeadline = copy.startingTunnelHeadline
                 connectionDetail = copy.packetTunnelStartingDetail
                 let providerStatus = try await startManagedTunnelSession()
+                startedResources.tunnelStarted = true
+                try Task.checkCancellation()
                 if !configuration.dnsServers.isEmpty {
                     do {
                         let dnsSnapshot = try await applySystemDNSServers(configuration.dnsServers)
                         activeDNSConfigurationSnapshot = dnsSnapshot
+                        startedResources.dnsApplied = true
                         appendLog(level: .info, source: "system", message: "System DNS enabled for tunnel: \(configuration.dnsServers.joined(separator: ", "))")
                     } catch {
                         appendLog(level: .error, source: "system", message: "Failed to apply system DNS for tunnel: \(error.localizedDescription)")
@@ -495,6 +543,7 @@ final class TunnelController: ObservableObject {
                 consumeTunnelStatus(providerStatus, source: "provider")
                 updateWorkflowStep(.systemProxy, state: .success, detail: providerStatus.detail ?? "Tunnel session connected")
             }
+            try Task.checkCancellation()
 
             activeConnectionContext = ActiveConnectionContext(
                 mode: connectionMode,
@@ -524,6 +573,14 @@ final class TunnelController: ObservableObject {
             updateWorkflowStep(.probe, state: .success, detail: "Probe success: \(reachableURL.host ?? reachableURL.absoluteString)")
             applyConnectedStatusPresentation(for: connectionMode, socksPort: socksPort, isProbeRunning: false)
             appendLog(level: .info, source: "app", message: "Connection workflow completed successfully")
+        } catch is CancellationError {
+            workflowSteps = Self.makeDefaultWorkflowSteps()
+            connectionHeadline = copy.connectionCancelledHeadline
+            connectionDetail = copy.connectionCancelledDetail
+            lastErrorDescription = ""
+            appendLog(level: .info, source: "app", message: "Connection workflow cancelled")
+            try? await disconnectWorkflowResources(cleanupState: startedResources)
+            isConnected = false
         } catch {
             let description = error.localizedDescription
             if connectionMode == .tunnel, case ConnectionWorkflowError.connectivityProbe = error {
@@ -549,14 +606,17 @@ final class TunnelController: ObservableObject {
             connectionHeadline = copy.connectionFailedHeadline
             connectionDetail = description
             appendLog(level: .error, source: "app", message: description)
-            try? await disconnectWorkflowResources()
+            try? await disconnectWorkflowResources(cleanupState: startedResources)
             isConnected = false
         }
     }
 
     private func disconnectWorkflow(preserveStatusMessage: Bool) async {
         isBusy = true
-        defer { isBusy = false }
+        defer {
+            isBusy = false
+            connectionOperation = .idle
+        }
 
         do {
             try await disconnectWorkflowResources()
@@ -803,7 +863,7 @@ final class TunnelController: ObservableObject {
                 break
             }
 
-            try? await Task.sleep(nanoseconds: 250_000_000)
+            try await Task.sleep(nanoseconds: 250_000_000)
         }
 
         let timeoutSuffix: String
@@ -823,7 +883,7 @@ final class TunnelController: ObservableObject {
             if status == .disconnected || status == .invalid {
                 return
             }
-            try? await Task.sleep(nanoseconds: 250_000_000)
+            try await Task.sleep(nanoseconds: 250_000_000)
         }
         throw ConnectionWorkflowError.systemProxy("Timed out waiting for packet tunnel stop.")
     }
@@ -902,23 +962,30 @@ final class TunnelController: ObservableObject {
         throw ConnectionWorkflowError.connectivityProbe(lastError?.localizedDescription ?? "All probe URLs failed.")
     }
 
-    private func disconnectWorkflowResources() async throws {
+    private func disconnectWorkflowResources(cleanupState: ConnectionResourceState? = nil) async throws {
         var failures: [String] = []
-        let cleanupMode = activeConnectionContext?.mode ?? selectedConnectionMode
+        let cleanupMode = cleanupState?.mode ?? activeConnectionContext?.mode ?? selectedConnectionMode
+        let shouldStopTunnel = cleanupState?.tunnelStarted ?? (manager?.connection.status == .connected || manager?.connection.status == .connecting || manager?.connection.status == .reasserting || manager?.connection.status == .disconnecting)
+        let shouldDisableProxy = cleanupState?.systemProxyEnabled ?? (cleanupMode == .proxy && activeConnectionContext != nil)
+        let shouldRestoreDNS = cleanupState?.dnsApplied ?? (cleanupMode == .tunnel && activeDNSConfigurationSnapshot != nil)
+        let shouldStopXray = cleanupState?.xrayStarted ?? xrayManager.isRunning
+        let shouldStopHelper = cleanupState?.helperStarted ?? isPrivilegedHelperRunning
 
-        do {
-            try await stopManagedTunnelIfNeeded()
-        } catch {
-            failures.append("tunnel: \(error.localizedDescription)")
+        if shouldStopTunnel {
+            do {
+                try await stopManagedTunnelIfNeeded()
+            } catch {
+                failures.append("tunnel: \(error.localizedDescription)")
+            }
         }
 
-        if cleanupMode == .proxy {
+        if cleanupMode == .proxy, shouldDisableProxy {
             do {
                 try await disableSystemProxy()
             } catch {
                 failures.append("system proxy: \(error.localizedDescription)")
             }
-        } else if cleanupMode == .tunnel {
+        } else if cleanupMode == .tunnel, shouldRestoreDNS {
             do {
                 try await restoreSystemDNSIfNeeded()
             } catch {
@@ -926,11 +993,11 @@ final class TunnelController: ObservableObject {
             }
         }
 
-        if xrayManager.isRunning {
+        if shouldStopXray {
             xrayManager.stop()
         }
 
-        if isPrivilegedHelperRunning {
+        if shouldStopHelper {
             do {
                 try await stopPrivilegedHelperInternal()
             } catch {
@@ -1644,6 +1711,47 @@ final class TunnelController: ObservableObject {
         @unknown default:
             return "unknown"
         }
+    }
+
+    private static func reserveAvailableLocalTCPPort() throws -> Int {
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard fd >= 0 else {
+            throw ConnectionWorkflowError.localProxy("Failed to allocate a local TCP port.")
+        }
+        defer { close(fd) }
+
+        var value: Int32 = 1
+        _ = withUnsafePointer(to: &value) {
+            setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, $0, socklen_t(MemoryLayout<Int32>.size))
+        }
+
+        var address = sockaddr_in()
+        address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_port = in_port_t(0).bigEndian
+        address.sin_addr = in_addr(s_addr: inet_addr("127.0.0.1"))
+
+        let bindResult = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        guard bindResult == 0 else {
+            throw ConnectionWorkflowError.localProxy("Failed to bind an available local TCP port.")
+        }
+
+        var boundAddress = sockaddr_in()
+        var length = socklen_t(MemoryLayout<sockaddr_in>.size)
+        let nameResult = withUnsafeMutablePointer(to: &boundAddress) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getsockname(fd, $0, &length)
+            }
+        }
+        guard nameResult == 0 else {
+            throw ConnectionWorkflowError.localProxy("Failed to resolve the allocated local TCP port.")
+        }
+
+        return Int(UInt16(bigEndian: boundAddress.sin_port))
     }
 
     private static func describeProviderStatus(_ status: TunnelProviderStatus) -> String {

@@ -64,6 +64,7 @@ struct ContentView: View {
         case ready
         case disconnected
         case idle
+        case cancelled
     }
 
     private struct StatusBadgePresentation {
@@ -323,10 +324,8 @@ struct ContentView: View {
                         systemImage: connectionAction.systemImage,
                         emphasis: .primary,
                         isBusy: connectionAction.isBusy,
-                        isEnabled: !tunnelController.isBusy,
-                        action: tunnelController.isConnected
-                            ? tunnelController.disconnectEmbeddedFlow
-                            : tunnelController.connectEmbeddedFlow
+                        isEnabled: connectionAction.isEnabled,
+                        action: connectionAction.action
                     )
 
                     actionButton(
@@ -909,19 +908,23 @@ struct ContentView: View {
         .disabled(!isEnabled)
     }
 
-    private func connectionActionPresentation() -> (title: String, systemImage: String, isBusy: Bool) {
-        if tunnelController.isBusy {
-            if tunnelController.isConnected {
-                return (copy.disconnectingTitle, "stop.fill", true)
-            }
-            return (copy.connectingTitle, "play.fill", true)
+    private func connectionActionPresentation() -> (title: String, systemImage: String, isBusy: Bool, isEnabled: Bool, action: () -> Void) {
+        switch tunnelController.connectionOperation {
+        case .connecting:
+            return (copy.cancelConnectingTitle, "xmark", true, true, tunnelController.cancelConnectAttempt)
+        case .cancellingConnect:
+            return (copy.cancellingConnectionTitle, "xmark", true, false, {})
+        case .disconnecting:
+            return (copy.disconnectingTitle, "stop.fill", true, false, {})
+        case .idle:
+            break
         }
 
         if tunnelController.isConnected {
-            return (copy.disconnectTitle, "stop.fill", false)
+            return (copy.disconnectTitle, "stop.fill", false, true, tunnelController.disconnectEmbeddedFlow)
         }
 
-        return (copy.connectTitle, "play.fill", false)
+        return (copy.connectTitle, "play.fill", false, true, tunnelController.connectEmbeddedFlow)
     }
 
     private func statusBadge() -> some View {
@@ -962,6 +965,12 @@ struct ContentView: View {
                 tint: Color(red: 59/255, green: 130/255, blue: 246/255), // Blue
                 kind: .ready,
                 isLive: true
+            )
+        } else if title.contains("Cancel") || title.lowercased().contains("cancel") {
+            presentation = StatusBadgePresentation(
+                tint: Color(red: 251/255, green: 146/255, blue: 60/255), // Amber/Orange
+                kind: .cancelled,
+                isLive: false
             )
         } else {
             presentation = StatusBadgePresentation(
@@ -1073,6 +1082,11 @@ struct ContentView: View {
                         Image(systemName: "circle.hexagonpath")
                             .font(.system(size: 14, weight: .bold))
                             .rotationEffect(.degrees(phase * 40))
+                            
+                    case .cancelled:
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .scaleEffect(0.95 + pulse * 0.1)
                     }
                 }
                 .foregroundStyle(.white)

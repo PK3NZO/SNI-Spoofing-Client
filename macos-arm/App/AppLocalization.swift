@@ -261,8 +261,32 @@ struct AppCopy {
         language == .english ? "Connecting..." : "در حال اتصال..."
     }
 
+    var cancelConnectingTitle: String {
+        language == .english ? "Cancel Connecting" : "لغو اتصال"
+    }
+
+    var cancellingConnectionTitle: String {
+        language == .english ? "Cancelling..." : "در حال لغو..."
+    }
+
     var disconnectingTitle: String {
         language == .english ? "Disconnecting..." : "در حال قطع اتصال..."
+    }
+
+    var cancellingConnectionHeadline: String {
+        language == .english ? "Cancelling Connection" : "در حال لغو اتصال"
+    }
+
+    var cancellingConnectionDetail: String {
+        language == .english ? "Stopping the connection attempt and cleaning up resources." : "در حال توقف تلاش اتصال و پاک‌سازی منابع."
+    }
+
+    var connectionCancelledHeadline: String {
+        language == .english ? "Connection Cancelled" : "اتصال لغو شد"
+    }
+
+    var connectionCancelledDetail: String {
+        language == .english ? "The connection attempt was cancelled." : "تلاش اتصال لغو شد."
     }
 
     var logsTitle: String {
