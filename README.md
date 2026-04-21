@@ -6,6 +6,12 @@ Native desktop client for running SNI-based DPI bypass workflows on macOS, with 
 [![Platform](https://img.shields.io/badge/platform-macOS%2013.3%2B-111827.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-16a34a.svg)](LICENSE)
 
+## Preview
+
+![SNI-Spoofing Client screenshot](docs/screenshots/app-overview-v1.2.1.jpeg)
+
+A live macOS screenshot of the current desktop client UI.
+
 ## English
 
 ### Overview
@@ -64,14 +70,9 @@ For end users:
 
 ### Screenshots
 
-Screenshots will be added here before/after release polish.
+Current UI preview:
 
-<!--
-Later insert screenshots like this:
-
-![Main Window](docs/screenshots/main-window.png)
-![Connection Flow](docs/screenshots/connection-flow.png)
--->
+![SNI-Spoofing Client screenshot](docs/screenshots/app-overview-v1.2.1.jpeg)
 
 ### Build From Source
 
@@ -172,7 +173,9 @@ SNI-Spoofing Client یک اپلیکیشن native برای macOS است که بر
 
 ### اسکرین‌شات‌ها
 
-اسکرین‌شات‌ها بعد از پولیش نهایی اینجا اضافه می‌شوند.
+نمای فعلی رابط کاربری:
+
+![SNI-Spoofing Client screenshot](docs/screenshots/app-overview-v1.2.1.jpeg)
 
 ### بیلد از سورس
 
