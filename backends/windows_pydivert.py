@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import ctypes
 import importlib
+import os
 import platform
 import socket
 import sys
 import threading
+import traceback
 
 from .base import ActiveBypassConnection, BypassBackend
 from fake_tcp import FakeInjectiveConnection, FakeTcpInjector
@@ -30,8 +33,34 @@ class WindowsPyDivertBackend(BypassBackend):
         try:
             self._injector.run(ready_callback=self._ready_event.set)
         except Exception as exc:
-            self._thread_error = f"{type(exc).__name__}: {exc}"
+            self._thread_error = f"{type(exc).__name__}: {exc} | traceback={traceback.format_exc().strip()}"
             self._error_event.set()
+
+    @staticmethod
+    def _windivert_dll_path() -> str:
+        try:
+            windivert_dll = importlib.import_module("pydivert.windivert_dll")
+            return str(getattr(windivert_dll, "DLL_PATH", ""))
+        except Exception:
+            return ""
+
+    @classmethod
+    def _preflight_windivert_dll(cls) -> None:
+        dll_path = cls._windivert_dll_path()
+        if not dll_path:
+            return
+        try:
+            ctypes.WinDLL(dll_path)
+        except Exception as exc:
+            machine = platform.machine()
+            detail = f"{type(exc).__name__}: {exc}"
+            if machine.lower() in {"arm64", "aarch64"} and os.path.basename(dll_path).lower() == "windivert64.dll":
+                raise RuntimeError(
+                    "WinDivert x64 DLL bundled by pydivert cannot be loaded from ARM64 Python. "
+                    "Use a Windows x64 VM/build environment, or provide a real ARM64 WinDivert DLL/driver build. "
+                    f"dll={dll_path} error={detail}"
+                ) from exc
+            raise RuntimeError(f"WinDivert DLL failed to load | dll={dll_path} error={detail}") from exc
 
     def start(self, interface_ipv4: str, connect_ip: str) -> None:
         if self._started:
@@ -59,6 +88,7 @@ class WindowsPyDivertBackend(BypassBackend):
         self._filter = w_filter
         self._interface_ipv4 = interface_ipv4
         self._connect_ip = connect_ip
+        self._preflight_windivert_dll()
         self._injector = FakeTcpInjector(w_filter, self.connections)
         self._thread = threading.Thread(target=self._run_injector, args=(), daemon=True)
         self._thread.start()
