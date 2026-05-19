@@ -48,6 +48,18 @@ class FakeTcpInjector(TcpInjector):
     def __init__(self, w_filter: str, connections: dict[tuple, FakeInjectiveConnection]):
         super().__init__(w_filter)
         self.connections = connections
+        self.packets_seen = 0
+        self.inbound_seen = 0
+        self.outbound_seen = 0
+        self.matched_inbound = 0
+        self.matched_outbound = 0
+
+    def diagnostic_state(self) -> str:
+        return (
+            f"packets_seen={self.packets_seen} inbound_seen={self.inbound_seen} "
+            f"outbound_seen={self.outbound_seen} matched_inbound={self.matched_inbound} "
+            f"matched_outbound={self.matched_outbound} active_connections={len(self.connections)}"
+        )
 
     def fake_send_thread(self, packet: Packet, connection: FakeInjectiveConnection):
         time.sleep(0.001)
@@ -168,25 +180,30 @@ class FakeTcpInjector(TcpInjector):
         return
 
     def inject(self, packet: Packet):
+        self.packets_seen += 1
         if packet.is_inbound:
+            self.inbound_seen += 1
             c_id = (packet.ip.dst_addr, packet.tcp.dst_port, packet.ip.src_addr, packet.tcp.src_port)
             try:
                 connection = self.connections[c_id]
             except KeyError:
                 self.w.send(packet, False)
             else:
+                self.matched_inbound += 1
                 with connection.thread_lock:
                     if not connection.monitor:
                         self.w.send(packet, False)
                         return
                     self.on_inbound_packet(packet, connection)
         elif packet.is_outbound:
+            self.outbound_seen += 1
             c_id = (packet.ip.src_addr, packet.tcp.src_port, packet.ip.dst_addr, packet.tcp.dst_port)
             try:
                 connection = self.connections[c_id]
             except KeyError:
                 self.w.send(packet, False)
             else:
+                self.matched_outbound += 1
                 with connection.thread_lock:
                     if not connection.monitor:
                         self.w.send(packet, False)

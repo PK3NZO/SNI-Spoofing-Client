@@ -138,10 +138,11 @@ class SniSpoofingServer:
             self._emit_log("debug", f"Bypass handshake ack received | local_port={src_port}")
         except Exception as exc:
             diagnostic_state = getattr(connection, "diagnostic_state", lambda: "diagnostic_state=unavailable")()
+            backend_diagnostic = getattr(self.backend, "diagnostic_summary", lambda: "backend_diagnostic=unavailable")()
             self._emit_log(
                 "error",
                 f"Bypass handshake failed | local_port={src_port} target={self.config.connect_ip}:{self.config.connect_port} "
-                f"reason={type(exc).__name__}: {exc} | {diagnostic_state}",
+                f"reason={type(exc).__name__}: {exc} | {diagnostic_state} | {backend_diagnostic}",
             )
             self.backend.unregister_connection(connection)
             outgoing_sock.close()

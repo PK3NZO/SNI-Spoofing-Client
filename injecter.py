@@ -1,5 +1,6 @@
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 
 try:
     from pydivert import WinDivert, Packet
@@ -36,8 +37,10 @@ class TcpInjector(ABC):
     def inject(self, packet: Packet):
         sys.exit("Not implemented")
 
-    def run(self):
+    def run(self, ready_callback: Callable[[], None] | None = None):
         with self.w:
+            if ready_callback is not None:
+                ready_callback()
             while True:
                 packet = self.w.recv(65575)
                 self.inject(packet)

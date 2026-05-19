@@ -491,6 +491,6 @@ class AppRuntime:
         for step in self._workflow_steps:
             lines.append(f"  - {step.title}: {step.state.value} | {step.detail}")
         lines.append("Recent events:")
-        for event in self._event_history[-40:]:
+        for event in self._event_history[-120:]:
             lines.append(f"  - {event.level.upper()} | {event.message}")
         return "\n".join(lines)
