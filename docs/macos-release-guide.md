@@ -25,8 +25,8 @@ Unsigned local verification:
 
 ```bash
 cd macos-arm
-ALLOW_UNSIGNED_APP_BUILD=1 ./build_arm_release.sh
-ALLOW_UNSIGNED_APP_BUILD=1 ./build_x86_64_release.sh
+ALLOW_UNSIGNED_APP_BUILD=1 ./build_release.sh arm64
+ALLOW_UNSIGNED_APP_BUILD=1 ./build_release.sh x86_64
 ```
 
 ## 3. Sign
@@ -67,6 +67,12 @@ What gets signed:
 
 ## 4. Create DMG
 
+Install the DMG builder dependency once:
+
+```bash
+brew install create-dmg
+```
+
 ```bash
 cd macos-arm
 ./package_dmg.sh arm64
@@ -74,6 +80,8 @@ cd macos-arm
 ```
 
 If `MACOS_SIGN_IDENTITY` is set, the DMG itself is also signed.
+
+The resulting DMG uses a styled drag-and-drop installer layout with a custom background and icon placement.
 
 ## 5. Notarize
 

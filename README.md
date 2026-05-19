@@ -111,8 +111,8 @@ For Windows preview builds:
 ```bash
 cd macos-arm
 ./generate_xcode_project.sh
-./build_arm_debug.sh
-./build_x86_64_debug.sh
+./build_debug.sh arm64
+./build_debug.sh x86_64
 ```
 
 Windows desktop preview:
@@ -141,10 +141,10 @@ Release build helpers:
 
 ```bash
 cd macos-arm
-./build_arm_release.sh
-./build_x86_64_release.sh
-./package_arm_release.sh
-./package_x86_64_release.sh
+./build_release.sh arm64
+./build_release.sh x86_64
+./package_release.sh arm64
+./package_release.sh x86_64
 ./generate_checksums.sh
 ```
 
@@ -271,18 +271,18 @@ SNI-Spoofing Client یک پروژه دسکتاپ برای سناریوهای د�
 ```bash
 cd macos-arm
 ./generate_xcode_project.sh
-./build_arm_debug.sh
-./build_x86_64_debug.sh
+./build_debug.sh arm64
+./build_debug.sh x86_64
 ```
 
 برای ریلیز:
 
 ```bash
 cd macos-arm
-./build_arm_release.sh
-./build_x86_64_release.sh
-./package_arm_release.sh
-./package_x86_64_release.sh
+./build_release.sh arm64
+./build_release.sh x86_64
+./package_release.sh arm64
+./package_release.sh x86_64
 ./generate_checksums.sh
 ```
 

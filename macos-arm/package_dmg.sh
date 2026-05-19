@@ -5,6 +5,7 @@ cd "$(dirname "$0")"
 
 VERSION="$(tr -d '\n' < "$PWD/VERSION")"
 SIGNING_IDENTITY="${MACOS_SIGN_IDENTITY:-}"
+APP_DISPLAY_NAME="SNI-Spoofing Client"
 
 normalize_arch() {
   local raw_arch="${1:-}"
@@ -31,14 +32,7 @@ fi
 APP_PATH="$PWD/build/${ARCH}/Release/SniSpoofingMac.app"
 DIST_DIR="$PWD/dist"
 DMG_PATH="${DIST_DIR}/SniSpoofingClient-macos-${ARCH}-v${VERSION}.dmg"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sni-dmg-${ARCH}-XXXXXX")"
-STAGE_DIR="${TMP_DIR}/stage"
 VOL_NAME="SNI-Spoofing Client ${VERSION} (${ARCH})"
-
-cleanup() {
-  rm -rf "${TMP_DIR}"
-}
-trap cleanup EXIT
 
 if [ ! -d "${APP_PATH}" ]; then
   echo "Release app not found at: ${APP_PATH}" >&2
@@ -46,22 +40,15 @@ if [ ! -d "${APP_PATH}" ]; then
   exit 1
 fi
 
-mkdir -p "${DIST_DIR}" "${STAGE_DIR}"
+mkdir -p "${DIST_DIR}"
 rm -f "${DMG_PATH}"
 
-cp -R "${APP_PATH}" "${STAGE_DIR}/"
-ln -s /Applications "${STAGE_DIR}/Applications"
-
-hdiutil create \
-  -volname "${VOL_NAME}" \
-  -srcfolder "${STAGE_DIR}" \
-  -ov \
-  -format UDZO \
-  "${DMG_PATH}" >/dev/null
-
-if [ -n "${SIGNING_IDENTITY}" ]; then
-  codesign --force --sign "${SIGNING_IDENTITY}" --timestamp --options runtime "${DMG_PATH}"
-fi
+"$PWD/create_pretty_dmg.sh" \
+  "${APP_PATH}" \
+  "${DMG_PATH}" \
+  "${VOL_NAME}" \
+  "${APP_DISPLAY_NAME}" \
+  "${SIGNING_IDENTITY}"
 
 echo
 echo "DMG package ready:"

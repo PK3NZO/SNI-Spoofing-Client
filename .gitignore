@@ -24,6 +24,8 @@ DerivedData/
 *.xcodeproj/xcuserdata/**
 **/xcuserdata/
 **/xcuserdata/**
+macos-arm/.local-signing/
+**/.local-signing/
 *.moved-aside
 *.swp
 macos-arm/build/

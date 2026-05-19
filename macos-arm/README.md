@@ -17,16 +17,17 @@ In پوشه source, scripts, va release tooling e macOS gharar darad.
 ```bash
 cd macos-arm
 ./generate_xcode_project.sh
-./build_arm_debug.sh
-./build_x86_64_debug.sh
+./build_debug.sh arm64
+./build_debug.sh x86_64
 ```
 
 ## Release scripts
 
 ```bash
 cd macos-arm
-./build_arm_release.sh
-./build_x86_64_release.sh
+brew install create-dmg
+./build_release.sh arm64
+./build_release.sh x86_64
 ./sign_release.sh arm64
 ./sign_release.sh x86_64
 ./package_dmg.sh arm64
@@ -62,6 +63,7 @@ cd macos-arm
 ## Notes
 
 - signed/notarized public releases should use the DMG flow
+- the DMG flow now builds a styled drag-and-drop installer window using `create-dmg`
 - helper and Xray are bundled per architecture
 - the public macOS release guide lives here:
   - [../docs/macos-release-guide.md](../docs/macos-release-guide.md)
