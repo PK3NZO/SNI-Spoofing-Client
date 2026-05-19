@@ -27,7 +27,9 @@ class XrayService:
         candidates = [
             os.environ.get("XRAY_EXECUTABLE"),
             str(_app_root() / "resources" / "windows" / "xray.exe"),
+            str(_app_root() / "_internal" / "resources" / "windows" / "xray.exe"),
             str(_app_root() / "dist" / "SNI-Spoofing" / "resources" / "windows" / "xray.exe"),
+            str(_app_root() / "dist" / "SNI-Spoofing" / "_internal" / "resources" / "windows" / "xray.exe"),
             str(_app_root() / "xray.exe"),
             shutil.which("xray.exe"),
             shutil.which("xray"),
