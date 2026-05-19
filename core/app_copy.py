@@ -30,8 +30,8 @@ class DesktopCopy:
     @property
     def app_subtitle(self) -> str:
         if self.language == AppLanguage.PERSIAN:
-            return "نسخه ویندوز در حال نزدیک شدن به فلو و رفتار macOS با یک runtime مشترک است."
-        return "Windows is moving toward the macOS flow through a shared runtime contract."
+            return "ابزار حالت `Proxy` یا `Tunnel` همراه helper و Xray."
+        return "utility for `Proxy` or `Tunnel` mode with a helper and Xray."
 
     @property
     def ready_headline(self) -> str:
