@@ -46,6 +46,7 @@ private struct ConnectionDraft {
 
 private struct ActiveConnectionContext {
     let mode: AppConnectionMode
+    let systemProxyEnabled: Bool
     let localProxyPort: Int
     let socksPort: Int
     let httpPort: Int
@@ -100,6 +101,13 @@ private enum ConnectionWorkflowError: LocalizedError {
 
 @MainActor
 final class TunnelController: ObservableObject {
+    private static let connectivityProbeURLs = [
+        URL(string: "https://www.facebook.com/"),
+        URL(string: "https://www.apple.com/library/test/success.html"),
+        URL(string: "https://www.cloudflare.com/cdn-cgi/trace"),
+    ].compactMap { $0 }
+    private static let systemProxyPreferenceKey = "app.proxy.enableSystemProxy"
+
     enum ConnectionOperationState {
         case idle
         case connecting
@@ -114,6 +122,11 @@ final class TunnelController: ObservableObject {
 
     @Published var configuration: TunnelConfiguration = .defaults
     @Published var selectedConnectionMode: AppConnectionMode = .proxy
+    @Published var enableSystemProxyInProxyMode: Bool = true {
+        didSet {
+            UserDefaults.standard.set(enableSystemProxyInProxyMode, forKey: Self.systemProxyPreferenceKey)
+        }
+    }
     @Published var whitelistDomainInput = ""
     @Published var whitelistIPInput = ""
     @Published var vlessConfigInput = ""
@@ -177,6 +190,9 @@ final class TunnelController: ObservableObject {
     }
 
     init() {
+        if UserDefaults.standard.object(forKey: Self.systemProxyPreferenceKey) != nil {
+            enableSystemProxyInProxyMode = UserDefaults.standard.bool(forKey: Self.systemProxyPreferenceKey)
+        }
         helperLogPathDescription = Self.helperLogURL.path
         resetLogStateForFreshStart() // Ensure we start with a clean log view
         refreshHelperState()
@@ -516,13 +532,19 @@ final class TunnelController: ObservableObject {
             let routeContext: [String]
             switch connectionMode {
             case .proxy:
-                updateWorkflowStep(.systemProxy, state: .running, detail: "Configuring the system proxy for active services")
-                connectionHeadline = copy.enablingProxyRouteHeadline
-                connectionDetail = copy.systemProxyDetail
-                routeContext = try await enableSystemProxy(httpPort: httpPort, socksPort: socksPort)
-                startedResources.systemProxyEnabled = true
-                routeManagerSummary = "System proxy | \(routeContext.joined(separator: ", "))"
-                updateWorkflowStep(.systemProxy, state: .success, detail: routeContext.joined(separator: ", "))
+                if enableSystemProxyInProxyMode {
+                    updateWorkflowStep(.systemProxy, state: .running, detail: copy.configuringSystemProxyDetail)
+                    connectionHeadline = copy.enablingProxyRouteHeadline
+                    connectionDetail = copy.systemProxyDetail
+                    routeContext = try await enableSystemProxy(httpPort: httpPort, socksPort: socksPort)
+                    startedResources.systemProxyEnabled = true
+                    routeManagerSummary = "System proxy | \(routeContext.joined(separator: ", "))"
+                    updateWorkflowStep(.systemProxy, state: .success, detail: routeContext.joined(separator: ", "))
+                } else {
+                    routeContext = []
+                    routeManagerSummary = copy.manualProxyRouteSummary
+                    updateWorkflowStep(.systemProxy, state: .success, detail: copy.systemProxySkippedDetail)
+                }
             case .tunnel:
                 updateWorkflowStep(.systemProxy, state: .running, detail: "Starting a VPN-style tunnel session")
                 connectionHeadline = copy.startingTunnelHeadline
@@ -550,6 +572,7 @@ final class TunnelController: ObservableObject {
 
             activeConnectionContext = ActiveConnectionContext(
                 mode: connectionMode,
+                systemProxyEnabled: connectionMode == .proxy ? enableSystemProxyInProxyMode : false,
                 localProxyPort: localProxyPort,
                 socksPort: socksPort,
                 httpPort: httpPort,
@@ -561,7 +584,12 @@ final class TunnelController: ObservableObject {
                 connectedAt: Date()
             )
             isConnected = true
-            applyConnectedStatusPresentation(for: connectionMode, socksPort: socksPort, isProbeRunning: false)
+            applyConnectedStatusPresentation(
+                for: connectionMode,
+                socksPort: socksPort,
+                isProbeRunning: false,
+                systemProxyEnabled: connectionMode == .proxy ? enableSystemProxyInProxyMode : nil
+            )
 
             updateWorkflowStep(
                 .probe,
@@ -570,11 +598,21 @@ final class TunnelController: ObservableObject {
                     ? copy.proxyProbeDetail
                     : copy.tunnelProbeDetail
             )
-            applyConnectedStatusPresentation(for: connectionMode, socksPort: socksPort, isProbeRunning: true)
+            applyConnectedStatusPresentation(
+                for: connectionMode,
+                socksPort: socksPort,
+                isProbeRunning: true,
+                systemProxyEnabled: connectionMode == .proxy ? enableSystemProxyInProxyMode : nil
+            )
             let reachableURL = try await runConnectivityProbe(httpPort: httpPort, mode: connectionMode)
             lastProbeDescription = reachableURL.absoluteString
             updateWorkflowStep(.probe, state: .success, detail: "Probe success: \(reachableURL.host ?? reachableURL.absoluteString)")
-            applyConnectedStatusPresentation(for: connectionMode, socksPort: socksPort, isProbeRunning: false)
+            applyConnectedStatusPresentation(
+                for: connectionMode,
+                socksPort: socksPort,
+                isProbeRunning: false,
+                systemProxyEnabled: connectionMode == .proxy ? enableSystemProxyInProxyMode : nil
+            )
             appendLog(level: .info, source: "app", message: "Connection workflow completed successfully")
         } catch is CancellationError {
             workflowSteps = Self.makeDefaultWorkflowSteps()
@@ -944,32 +982,66 @@ final class TunnelController: ObservableObject {
     }
 
     private func runConnectivityProbe(httpPort: Int, mode: AppConnectionMode) async throws -> URL {
-        let probeURLs = [
-            URL(string: "https://www.apple.com/library/test/success.html"),
-            URL(string: "https://www.cloudflare.com/cdn-cgi/trace"),
-            URL(string: "https://example.com"),
-        ].compactMap { $0 }
+        if mode == .tunnel {
+            appendLog(level: .debug, source: "probe", message: "Tunnel probe warmup started")
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        }
 
+        let attempts = mode == .tunnel ? 2 : 1
         var lastError: Error?
-        for url in probeURLs {
-            do {
-                try await Self.probe(url: url, httpPort: httpPort, mode: mode)
-                appendLog(level: .info, source: "probe", message: "Connectivity probe succeeded: \(url.absoluteString)")
-                return url
-            } catch {
-                lastError = error
-                appendLog(level: .debug, source: "probe", message: "Probe failed for \(url.absoluteString): \(error.localizedDescription)")
+        for attempt in 1 ... attempts {
+            for url in Self.connectivityProbeURLs {
+                do {
+                    try await Self.probe(url: url, httpPort: httpPort, mode: mode)
+                    appendLog(level: .info, source: "probe", message: "Connectivity probe succeeded: \(url.absoluteString)")
+                    return url
+                } catch {
+                    lastError = error
+                    appendLog(level: .debug, source: "probe", message: "Probe attempt \(attempt) failed for \(url.absoluteString): \(error.localizedDescription)")
+                }
+            }
+
+            if attempt < attempts {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
 
         throw ConnectionWorkflowError.connectivityProbe(lastError?.localizedDescription ?? "All probe URLs failed.")
     }
 
+    private func shouldSurfaceProxyError(
+        detail: String,
+        activeConnections: Int,
+        bytesUploaded: Int,
+        bytesDownloaded: Int,
+        phase: String
+    ) -> Bool {
+        let normalized = detail.lowercased()
+        let isTransientBypassTimeout = normalized.contains("timed out waiting for ack of fake payload")
+        let hasHealthyTraffic = phase == "running" && (activeConnections > 0 || bytesUploaded > 0 || bytesDownloaded > 0)
+        return !(isTransientBypassTimeout && hasHealthyTraffic)
+    }
+
+    private func clearTransientProxyErrorIfHealthy(
+        activeConnections: Int,
+        bytesUploaded: Int,
+        bytesDownloaded: Int,
+        phase: String
+    ) {
+        let hasHealthyTraffic = phase == "running" && (activeConnections > 0 || bytesUploaded > 0 || bytesDownloaded > 0)
+        guard hasHealthyTraffic else { return }
+
+        let normalized = lastErrorDescription.lowercased()
+        if normalized.contains("bypass handshake failed") || normalized.contains("timed out waiting for ack of fake payload") {
+            lastErrorDescription = ""
+        }
+    }
+
     private func disconnectWorkflowResources(cleanupState: ConnectionResourceState? = nil) async throws {
         var failures: [String] = []
         let cleanupMode = cleanupState?.mode ?? activeConnectionContext?.mode ?? selectedConnectionMode
         let shouldStopTunnel = cleanupState?.tunnelStarted ?? (manager?.connection.status == .connected || manager?.connection.status == .connecting || manager?.connection.status == .reasserting || manager?.connection.status == .disconnecting)
-        let shouldDisableProxy = cleanupState?.systemProxyEnabled ?? (cleanupMode == .proxy && activeConnectionContext != nil)
+        let shouldDisableProxy = cleanupState?.systemProxyEnabled ?? (cleanupMode == .proxy && activeConnectionContext?.systemProxyEnabled == true)
         let shouldRestoreDNS = cleanupState?.dnsApplied ?? (cleanupMode == .tunnel && activeDNSConfigurationSnapshot != nil)
         let shouldStopXray = cleanupState?.xrayStarted ?? xrayManager.isRunning
         let shouldStopHelper = cleanupState?.helperStarted ?? isPrivilegedHelperRunning
@@ -1137,16 +1209,19 @@ final class TunnelController: ObservableObject {
         configuration.logLevel.rawValue.uppercased()
     }
 
-    private func applyConnectedStatusPresentation(for mode: AppConnectionMode, socksPort: Int? = nil, isProbeRunning: Bool) {
+    private func applyConnectedStatusPresentation(for mode: AppConnectionMode, socksPort: Int? = nil, isProbeRunning: Bool, systemProxyEnabled: Bool? = nil) {
         switch mode {
         case .proxy:
             let resolvedPort = socksPort ?? activeConnectionContext?.socksPort ?? configuration.socksProxyPort
+            let proxyIsSystemWide = systemProxyEnabled ?? activeConnectionContext?.systemProxyEnabled ?? false
             if let resolvedPort {
                 connectionHeadline = copy.socksProxyUpHeadline(host: "127.0.0.1", port: resolvedPort)
             } else {
                 connectionHeadline = copy.proxyConnectedHeadline
             }
-            connectionDetail = isProbeRunning ? copy.probingProxyDetail : copy.proxyCompleteDetail
+            connectionDetail = isProbeRunning
+                ? copy.probingProxyDetail
+                : (proxyIsSystemWide ? copy.proxyCompleteDetail : copy.manualProxyCompleteDetail)
         case .tunnel:
             connectionHeadline = copy.vpnIsOnHeadline
             connectionDetail = isProbeRunning ? copy.probingTunnelDetail : copy.tunnelCompleteDetail
@@ -1182,7 +1257,7 @@ final class TunnelController: ObservableObject {
         }
 
         configuration = TunnelConfiguration(providerConfiguration: tunnelProtocol.providerConfiguration)
-        selectedConnectionMode = configuration.connectionMode
+        selectedConnectionMode = .proxy
     }
 
     private func requireSession() throws -> NETunnelProviderSession {
@@ -1233,7 +1308,23 @@ final class TunnelController: ObservableObject {
         proxyLastDetail = status.detail ?? "-"
         proxyStatusDescription = Self.describeNativeProxyStatus(status)
         if status.logLevel == .error {
-            lastErrorDescription = status.detail ?? copy.proxyError
+            let detail = status.detail ?? copy.proxyError
+            if shouldSurfaceProxyError(
+                detail: detail,
+                activeConnections: status.activeConnections,
+                bytesUploaded: status.bytesUploaded,
+                bytesDownloaded: status.bytesDownloaded,
+                phase: status.phase
+            ) {
+                lastErrorDescription = detail
+            }
+        } else {
+            clearTransientProxyErrorIfHealthy(
+                activeConnections: status.activeConnections,
+                bytesUploaded: status.bytesUploaded,
+                bytesDownloaded: status.bytesDownloaded,
+                phase: status.phase
+            )
         }
         appendLog(level: status.logLevel, source: source, message: Self.describeNativeProxyStatus(status))
     }
@@ -1392,10 +1483,27 @@ final class TunnelController: ObservableObject {
             proxyLastDetail = detail
             proxyStatusDescription = detail
             if level == .error {
-                lastErrorDescription = detail
+                if shouldSurfaceProxyError(
+                    detail: detail,
+                    activeConnections: proxyConnectionCount,
+                    bytesUploaded: proxyBytesUploaded,
+                    bytesDownloaded: proxyBytesDownloaded,
+                    phase: proxyPhase
+                ) {
+                    lastErrorDescription = detail
+                }
             }
         } else {
             proxyStatusDescription = line
+        }
+
+        if level != .error {
+            clearTransientProxyErrorIfHealthy(
+                activeConnections: proxyConnectionCount,
+                bytesUploaded: proxyBytesUploaded,
+                bytesDownloaded: proxyBytesDownloaded,
+                phase: proxyPhase
+            )
         }
 
         if proxyPhase == "stopped" {
@@ -1433,6 +1541,7 @@ final class TunnelController: ObservableObject {
         lines.append("=== SNI-Spoofing Client Diagnostic Dump ===")
         lines.append("Generated at: \(formatter.string(from: Date()))")
         lines.append("Mode: \(copy.connectionModeTitle(selectedConnectionMode))")
+        lines.append("Proxy auto-config enabled: \(enableSystemProxyInProxyMode)")
         lines.append("Headline: \(connectionHeadline)")
         lines.append("Detail: \(connectionDetail)")
         lines.append("Connected: \(isConnected)")
@@ -2061,8 +2170,8 @@ final class TunnelController: ObservableObject {
 
     private static func probe(url: URL, httpPort: Int, mode: AppConnectionMode) async throws {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 12
+        config.timeoutIntervalForRequest = mode == .tunnel ? 12 : 8
+        config.timeoutIntervalForResource = mode == .tunnel ? 18 : 12
         // In proxy mode we probe through explicit local proxy.
         // In tunnel mode we intentionally probe without explicit proxy dictionary
         // so the check reflects real system route/tunnel behavior.

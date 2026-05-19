@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -16,7 +16,7 @@
 		1E64360FA7C788BAEFD148D5 /* TunnelTrafficBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9112A2EAB0CB38294AC8749A /* TunnelTrafficBridge.swift */; };
 		223096889C3116BED9D2029C /* TLSClientHelloBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E4641830D6DDF39260EA78 /* TLSClientHelloBuilder.swift */; };
 		2535B92207E6506307D02574 /* SystemNetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76A4535F52DD3157BA11C1CC /* SystemNetworkUtils.swift */; };
-		2CDABCA32E22222B028DEFA6 /* SniPacketTunnel.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5CA53E8398A3CB1E4328F457 /* SniPacketTunnel.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2CDABCA32E22222B028DEFA6 /* PacketTunnel.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5CA53E8398A3CB1E4328F457 /* PacketTunnel.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2F50D9D2500E30326B22B9B5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37DE60F22CF7E17CD76A432 /* ContentView.swift */; };
 		38AAF0788B485B3A73CE3564 /* TunnelMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F830596E4CFD3FE9F0EE12D /* TunnelMessages.swift */; };
 		3C187BB32D7D838913756502 /* xray-arm64.bin in Resources */ = {isa = PBXBuildFile; fileRef = EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */; };
@@ -70,7 +70,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				2CDABCA32E22222B028DEFA6 /* SniPacketTunnel.appex in Embed Foundation Extensions */,
+				2CDABCA32E22222B028DEFA6 /* PacketTunnel.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -79,12 +79,12 @@
 
 /* Begin PBXFileReference section */
 		02CFFE4D0DBFEDFC54ED7CD2 /* XrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XrayManager.swift; sourceTree = "<group>"; };
-		4AE6185A21C33AE0DB29BAC1 /* flag_uk.svg */ = {isa = PBXFileReference; path = flag_uk.svg; sourceTree = "<group>"; };
+		4AE6185A21C33AE0DB29BAC1 /* flag_uk.svg */ = {isa = PBXFileReference; lastKnownFileType = text; path = flag_uk.svg; sourceTree = "<group>"; };
 		5855F859A3B5E95D244825CD /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
-		5CA53E8398A3CB1E4328F457 /* SniPacketTunnel.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SniPacketTunnel.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5CA53E8398A3CB1E4328F457 /* PacketTunnel.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnel.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5D24832D6852DF5EA336B4F0 /* SniSpoofingMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SniSpoofingMacApp.swift; sourceTree = "<group>"; };
 		5EFCAE70129D1042E3EBABFC /* PacketParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PacketParser.swift; sourceTree = "<group>"; };
-		5F2C8F868DD86B218D3A6C77 /* SniProxyHelper */ = {isa = PBXFileReference; includeInIndex = 0; path = SniProxyHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		5F2C8F868DD86B218D3A6C77 /* SniProxyHelper */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; name = SniProxyHelper; path = "sni-proxy-helper"; sourceTree = BUILT_PRODUCTS_DIR; };
 		74C27C61070554F9229ABDB2 /* SpoofingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpoofingEngine.swift; sourceTree = "<group>"; };
 		76A4535F52DD3157BA11C1CC /* SystemNetworkUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNetworkUtils.swift; sourceTree = "<group>"; };
 		797BC411A6F440203ABD6283 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
@@ -103,7 +103,7 @@
 		E06C6BB3A8BA83C74CA0C892 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E160D64E473752FB9F09E415 /* RawPacketSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawPacketSupport.swift; sourceTree = "<group>"; };
 		E4E4641830D6DDF39260EA78 /* TLSClientHelloBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLSClientHelloBuilder.swift; sourceTree = "<group>"; };
-		ED44EA7EB239F4C95A706373 /* flag_ir.svg */ = {isa = PBXFileReference; path = flag_ir.svg; sourceTree = "<group>"; };
+		ED44EA7EB239F4C95A706373 /* flag_ir.svg */ = {isa = PBXFileReference; lastKnownFileType = text; path = flag_ir.svg; sourceTree = "<group>"; };
 		EF5DA55484DA00C1A2ADBB5E /* xray-arm64.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "xray-arm64.bin"; sourceTree = "<group>"; };
 		F576F52BEC4A3C8D5084AFB5 /* TunnelConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelConfiguration.swift; sourceTree = "<group>"; };
 		F9017512BD79F54ECFAD13E6 /* LibpcapBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LibpcapBridge.m; sourceTree = "<group>"; };
@@ -147,7 +147,7 @@
 		5E60A85A06F60CAFE7089339 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5CA53E8398A3CB1E4328F457 /* SniPacketTunnel.appex */,
+				5CA53E8398A3CB1E4328F457 /* PacketTunnel.appex */,
 				5F2C8F868DD86B218D3A6C77 /* SniProxyHelper */,
 				C1BF2F05C2087FD8B9087974 /* SniSpoofingMac.app */,
 			);
@@ -279,7 +279,7 @@
 			packageProductDependencies = (
 			);
 			productName = SniPacketTunnel;
-			productReference = 5CA53E8398A3CB1E4328F457 /* SniPacketTunnel.appex */;
+			productReference = 5CA53E8398A3CB1E4328F457 /* PacketTunnel.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -309,7 +309,6 @@
 			);
 			mainGroup = A460267376C66373E9344F87;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -407,6 +406,7 @@
 				CODE_SIGN_ENTITLEMENTS = PacketTunnel/SniPacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NMVD5BGX82;
 				INFOPLIST_FILE = PacketTunnel/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -523,6 +523,7 @@
 				CODE_SIGN_ENTITLEMENTS = PacketTunnel/SniPacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NMVD5BGX82;
 				INFOPLIST_FILE = PacketTunnel/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -544,6 +545,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/SniSpoofingMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NMVD5BGX82;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -631,6 +633,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/SniSpoofingMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NMVD5BGX82;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

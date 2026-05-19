@@ -11,7 +11,9 @@ If you believe you found a security issue:
 Please include:
 
 - affected version
-- macOS architecture (`arm64` or `x86_64`)
+- platform and architecture
 - whether the issue affects `Proxy`, `Tunnel`, or both
+- whether `xray.exe` was bundled, loaded from `PATH`, or supplied via `XRAY_EXECUTABLE`
+- whether system proxy automation was enabled
 - reproduction steps
 - expected impact

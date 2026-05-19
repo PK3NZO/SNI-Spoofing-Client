@@ -131,6 +131,16 @@ struct AppCopy {
         }
     }
 
+    var proxyAutoConfigTitle: String {
+        language == .english ? "Set macOS proxy settings automatically" : "تنظیم خودکار پروکسی macOS"
+    }
+
+    var proxyAutoConfigSubtitle: String {
+        language == .english
+            ? "When disabled, the local HTTP and SOCKS proxies still run, but system-wide proxy settings stay unchanged."
+            : "اگر خاموش باشد، پروکسی‌های محلی HTTP و SOCKS اجرا می‌شوند اما تنظیمات سراسری پروکسی سیستم تغییر نمی‌کند."
+    }
+
     var configurationSaved: String {
         language == .english ? "Configuration saved" : "تنظیمات ذخیره شد"
     }
@@ -610,6 +620,14 @@ struct AppCopy {
         language == .english ? "HTTP, HTTPS, and SOCKS proxies are being configured for macOS services." : "پروکسی‌های HTTP، HTTPS و SOCKS برای سرویس‌های macOS در حال تنظیم هستند."
     }
 
+    var systemProxySkippedDetail: String {
+        language == .english ? "System proxy setup skipped. Use the local proxy address manually in other apps." : "تنظیم پروکسی سیستم رد شد. از آدرس پروکسی محلی به‌صورت دستی در برنامه‌های دیگر استفاده کن."
+    }
+
+    var manualProxyRouteSummary: String {
+        language == .english ? "Manual proxy only | system settings unchanged" : "فقط پروکسی دستی | تنظیمات سیستم بدون تغییر"
+    }
+
     var startingTunnelDetail: String {
         language == .english ? "Starting a VPN-style tunnel session" : "در حال شروع نشست تونل به سبک VPN"
     }
@@ -620,6 +638,10 @@ struct AppCopy {
 
     var proxyCompleteDetail: String {
         language == .english ? "The flow is complete. System proxy is active and traffic passes through the local spoof proxy plus embedded Xray." : "فرآیند کامل شد. پروکسی سیستم فعال است و ترافیک از پروکسی محلی و Xray داخلی عبور می‌کند."
+    }
+
+    var manualProxyCompleteDetail: String {
+        language == .english ? "The local spoof proxy and embedded Xray are ready. Configure your apps manually with the shown local proxy ports." : "پروکسی محلی spoof و Xray داخلی آماده هستند. برنامه‌های خودت را با پورت‌های محلی نمایش‌داده‌شده به‌صورت دستی تنظیم کن."
     }
 
     var tunnelCompleteDetail: String {

@@ -1,0 +1,39 @@
+name: Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-installer.yml"
+      - "main.py"
+      - "desktop/**"
+      - "core/**"
+      - "backends/**"
+      - "scripts/windows/**"
+      - "requirements.txt"
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build installer
+        shell: powershell
+        run: .\scripts\windows\release.ps1
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SNI-Spoofing-Setup
+          path: release/windows/SNI-Spoofing-Setup-v1.2.1.exe
+          if-no-files-found: error

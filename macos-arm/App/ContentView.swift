@@ -314,6 +314,45 @@ struct ContentView: View {
                         .animation(.easeInOut(duration: 0.2), value: isVlessMasked)
                         .animation(.easeInOut(duration: 0.2), value: configFieldNeedsAttention)
                     }
+
+                    if tunnelController.selectedConnectionMode == .proxy {
+                        Button {
+                            guard !inputsLocked else { return }
+                            tunnelController.enableSystemProxyInProxyMode.toggle()
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: tunnelController.enableSystemProxyInProxyMode ? "checkmark.square.fill" : "square")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(tunnelController.enableSystemProxyInProxyMode ? Color(red: 30/255, green: 111/255, blue: 255/255) : Color.textSecondary)
+                                    .padding(.top, 1)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(copy.proxyAutoConfigTitle)
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .foregroundStyle(Color.textPrimary)
+                                    Text(copy.proxyAutoConfigSubtitle)
+                                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                                        .foregroundStyle(Color.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(red: 248/255, green: 250/255, blue: 252/255))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.inputBorder, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .opacity(inputsLocked ? 0.6 : 1.0)
+                        .disabled(inputsLocked)
+                    }
                 }
 
                 if tunnelController.isConnected {
