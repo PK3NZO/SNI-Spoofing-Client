@@ -196,15 +196,15 @@ QPushButton#FlagButton {
     padding: 0;
 }
 QPushButton#IconButton {
-    min-width: 28px;
-    max-width: 28px;
-    min-height: 28px;
-    max-height: 28px;
-    border-radius: 14px;
+    min-width: 34px;
+    max-width: 34px;
+    min-height: 34px;
+    max-height: 34px;
+    border-radius: 17px;
     background: rgba(255, 255, 255, 210);
     border: 0;
     color: #64748b;
-    font-size: 14px;
+    font-size: 18px;
     padding: 0;
 }
 QCheckBox {
@@ -238,6 +238,7 @@ class MainWindow(QMainWindow):
         self._detail_keys = ["Mode", "Connection", "Allowlist", "System Route", "Original Server", "Probe"]
         self._details_expanded = False
         self._workflow_expanded = False
+        self._workflow_render_signature: tuple[tuple[str, str, str], ...] | None = None
         self.setWindowTitle(self.copy.app_title)
         self.setMinimumSize(1180, 780)
 
@@ -422,6 +423,7 @@ class MainWindow(QMainWindow):
         self.tunnel_mode_button = QPushButton(self.copy.tunnel)
         self.tunnel_mode_button.setObjectName("ModeButton")
         self.tunnel_mode_button.clicked.connect(lambda: self._select_mode(ConnectionMode.TUNNEL.value))
+        self.tunnel_mode_button.setToolTip("Windows Tunnel mode is not implemented yet.")
         self.mode_group.addButton(self.proxy_mode_button)
         self.mode_group.addButton(self.tunnel_mode_button)
         layout.addWidget(self.proxy_mode_button)
@@ -500,7 +502,7 @@ class MainWindow(QMainWindow):
         proxy_editor_layout = QGridLayout(proxy_editor)
         proxy_editor_layout.setContentsMargins(0, 0, 0, 0)
         proxy_editor_layout.setSpacing(0)
-        self.proxy_visibility_button = QPushButton("◉")
+        self.proxy_visibility_button = QPushButton("👁")
         self.proxy_visibility_button.setObjectName("IconButton")
         self.proxy_visibility_button.setToolTip("Show / hide config")
         proxy_editor_layout.addWidget(self.proxy_link, 0, 0)
@@ -615,6 +617,9 @@ class MainWindow(QMainWindow):
         return label
 
     def _select_mode(self, mode: str) -> None:
+        if mode == ConnectionMode.TUNNEL.value:
+            self.append_log("[ERROR] Windows Tunnel mode is not implemented yet.")
+            mode = ConnectionMode.PROXY.value
         self.proxy_mode_button.setProperty("active", "true" if mode == ConnectionMode.PROXY.value else "false")
         self.tunnel_mode_button.setProperty("active", "true" if mode == ConnectionMode.TUNNEL.value else "false")
         self.proxy_mode_button.style().unpolish(self.proxy_mode_button)
@@ -738,6 +743,13 @@ class MainWindow(QMainWindow):
         return self.copy.ready_headline
 
     def _render_workflow(self) -> None:
+        signature = tuple(
+            (step.key.value, step.state.value, step.detail)
+            for step in self.runtime.workflow_steps
+        )
+        if signature == self._workflow_render_signature:
+            return
+        self._workflow_render_signature = signature
         while self.workflow_layout.count():
             child = self.workflow_layout.takeAt(0)
             widget = child.widget()
@@ -868,6 +880,7 @@ class MainWindow(QMainWindow):
 
     def on_language_changed(self) -> None:
         self.copy = DesktopCopy(self.current_language())
+        self._workflow_render_signature = None
         self._retranslate_ui()
         self.runtime.update_config(ui_language=self.current_language())
         self.refresh_ui_state()

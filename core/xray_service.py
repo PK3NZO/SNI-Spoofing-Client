@@ -23,6 +23,14 @@ class XrayService:
     def is_running(self) -> bool:
         return self._process is not None and self._process.poll() is None
 
+    @property
+    def config_path(self) -> str:
+        return str(self._config_path) if self._config_path is not None else "-"
+
+    @property
+    def output_path(self) -> str:
+        return str(self._output_path) if self._output_path is not None else "-"
+
     def executable_path(self) -> str:
         candidates = [
             os.environ.get("XRAY_EXECUTABLE"),

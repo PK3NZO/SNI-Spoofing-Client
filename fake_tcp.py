@@ -27,7 +27,10 @@ class FakeInjectiveConnection(MonitorConnection):
         self.running_loop = asyncio.get_running_loop()
 
     async def wait_until_ready(self, timeout: float) -> None:
-        await asyncio.wait_for(self.t2a_event.wait(), timeout)
+        try:
+            await asyncio.wait_for(self.t2a_event.wait(), timeout)
+        except asyncio.TimeoutError as exc:
+            raise RuntimeError("timed out waiting for ack of fake payload") from exc
         if self.t2a_msg == "fake_data_ack_recv":
             return
         raise RuntimeError(self.t2a_msg or "fake handshake failed")

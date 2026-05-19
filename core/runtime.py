@@ -227,6 +227,7 @@ class AppRuntime:
             self._set_step(WorkflowStepKey.XRAY, WorkflowStepState.SKIPPED, "No proxy link provided")
             self._set_step(WorkflowStepKey.SYSTEM_ROUTE, WorkflowStepState.SKIPPED, "No Xray session")
             self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.SKIPPED, "No proxy session to probe")
+            self._set_state(RuntimeState.RUNNING, "Local listener is active")
             return
 
         self._set_step(WorkflowStepKey.XRAY, WorkflowStepState.RUNNING, "Starting Xray with generated config")
@@ -238,7 +239,16 @@ class AppRuntime:
             outbound_port=self._config.listen_port,
             log_level=self._config.log_level,
         )
+        self._emit(
+            "debug",
+            f"Xray config prepared | inbounds=socks:{self.fixed_socks_port},http:{self.fixed_http_port} "
+            f"outbound={self._config.listen_host}:{self._config.listen_port} original={self._original_server_summary}",
+        )
         self._xray_service.start(xray_config)
+        self._emit(
+            "debug",
+            f"Xray process started | config={self._xray_service.config_path} log={self._xray_service.output_path}",
+        )
         self._set_step(
             WorkflowStepKey.XRAY,
             WorkflowStepState.SUCCESS,
@@ -258,34 +268,30 @@ class AppRuntime:
             self._route_summary = "Manual proxy only | system settings unchanged"
             self._set_step(WorkflowStepKey.SYSTEM_ROUTE, WorkflowStepState.SKIPPED, "Manual proxy mode")
 
-        self._headline = f"SOCKS 127.0.0.1:{self.fixed_socks_port} | HTTP 127.0.0.1:{self.fixed_http_port}"
-        self._detail = "Xray + local bypass stack is active. App traffic can route through the generated local proxies."
+        self._headline = "Testing proxy route"
+        self._detail = "Xray is running; validating traffic through the local bypass stack."
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.RUNNING, "Testing internet access through the local HTTP proxy")
-        try:
-            probe_url = probe_via_local_http_proxy(self.fixed_http_port)
-        except ConnectivityProbeError as exc:
-            self._probe_summary = str(exc)
-            self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.FAILURE, self._probe_summary)
-            self._emit("error", f"Connectivity probe failed: {exc}")
-            self._detail = (
-                "Local proxies are up, but the built-in connectivity probe failed. Manual app testing is still possible."
-            )
-            return
+        self._emit("debug", f"Connectivity probe started | http_proxy=127.0.0.1:{self.fixed_http_port}")
+        probe_url = probe_via_local_http_proxy(self.fixed_http_port)
 
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.SUCCESS, f"Probe success: {probe_url}")
         self._probe_summary = probe_url
+        self._headline = f"SOCKS 127.0.0.1:{self.fixed_socks_port} | HTTP 127.0.0.1:{self.fixed_http_port}"
+        self._detail = "Xray + local bypass stack is active. App traffic can route through the generated local proxies."
+        self._set_state(RuntimeState.RUNNING, "Proxy route validated")
 
     def _run_startup_stack(self) -> None:
         try:
             self._start_proxy_stack()
-        except (ProxyLinkError, RuntimeError, XrayServiceError, SystemProxyError) as exc:
+        except (ProxyLinkError, RuntimeError, XrayServiceError, SystemProxyError, ConnectivityProbeError) as exc:
             self._last_error = str(exc)
             self._headline = "Connection Failed"
-            self._detail = self._last_error
+            self._detail = f"Proxy validation failed: {self._last_error}"
+            self._probe_summary = self._last_error
             self._set_state(RuntimeState.ERROR, self._last_error)
             self._emit("error", self._last_error)
             self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.FAILURE, self._last_error)
-            self.stop()
+            self.stop(preserve_error=True)
         finally:
             with self._lock:
                 self._startup_thread = None
@@ -369,7 +375,6 @@ class AppRuntime:
         assert self._server is not None
         task = loop.create_task(self._server.serve_forever())
         self._task = task
-        self._set_state(RuntimeState.RUNNING, "Backend is active")
         self._emit("info", f"backend={self._config.selected_backend()}")
         try:
             loop.run_until_complete(task)
@@ -410,17 +415,19 @@ class AppRuntime:
                     self._headline = "Ready"
                     self._detail = "Set the allowlist and proxy config, then connect."
 
-    def stop(self) -> None:
+    def stop(self, preserve_error: bool = False) -> None:
         with self._lock:
             if self._thread is None or not self._thread.is_alive():
-                self._set_state(RuntimeState.STOPPED, "Ready")
-                self._headline = "Ready"
-                self._detail = "Set the allowlist and proxy config, then connect."
+                if not preserve_error:
+                    self._set_state(RuntimeState.STOPPED, "Ready")
+                    self._headline = "Ready"
+                    self._detail = "Set the allowlist and proxy config, then connect."
                 return
 
-            self._headline = "Disconnecting"
-            self._detail = "Stopping backend and cleaning up local resources."
-            self._set_state(RuntimeState.STOPPING, "Stopping backend")
+            if not preserve_error:
+                self._headline = "Disconnecting"
+                self._detail = "Stopping backend and cleaning up local resources."
+                self._set_state(RuntimeState.STOPPING, "Stopping backend")
             try:
                 self._system_proxy_manager.disable()
             except SystemProxyError as exc:

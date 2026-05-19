@@ -92,7 +92,7 @@ class SniSpoofingServer:
                 return
 
     async def handle(self, incoming_sock: socket.socket, incoming_remote_addr) -> None:
-        del incoming_remote_addr
+        client_host, client_port = incoming_remote_addr[:2]
         self._increment_active_connections(1)
         loop = asyncio.get_running_loop()
         fake_data = ClientHelloMaker.get_client_hello_with(
@@ -107,6 +107,12 @@ class SniSpoofingServer:
         configure_keepalive(outgoing_sock)
 
         src_port = outgoing_sock.getsockname()[1]
+        self._emit_log(
+            "debug",
+            f"Bypass handshake start | client={client_host}:{client_port} "
+            f"local={self.interface_ipv4}:{src_port} target={self.config.connect_ip}:{self.config.connect_port} "
+            f"fake_sni={self.config.fake_sni}",
+        )
         connection = self.backend.register_connection(
             outgoing_sock,
             self.interface_ipv4,
@@ -118,7 +124,9 @@ class SniSpoofingServer:
         )
         try:
             await loop.sock_connect(outgoing_sock, (self.config.connect_ip, self.config.connect_port))
-        except Exception:
+            self._emit_log("debug", f"TCP connect established | {self.interface_ipv4}:{src_port} -> {self.config.connect_ip}:{self.config.connect_port}")
+        except Exception as exc:
+            self._emit_log("error", f"TCP connect failed | {self.config.connect_ip}:{self.config.connect_port} | {type(exc).__name__}: {exc}")
             self.backend.unregister_connection(connection)
             outgoing_sock.close()
             incoming_sock.close()
@@ -127,7 +135,13 @@ class SniSpoofingServer:
 
         try:
             await connection.wait_until_ready(timeout=2)
-        except Exception:
+            self._emit_log("debug", f"Bypass handshake ack received | local_port={src_port}")
+        except Exception as exc:
+            self._emit_log(
+                "error",
+                f"Bypass handshake failed | local_port={src_port} target={self.config.connect_ip}:{self.config.connect_port} "
+                f"reason={type(exc).__name__}: {exc}",
+            )
             self.backend.unregister_connection(connection)
             outgoing_sock.close()
             incoming_sock.close()
