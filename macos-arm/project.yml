@@ -27,8 +27,8 @@ schemes:
 settings:
   base:
     SWIFT_VERSION: 5.0
-    MARKETING_VERSION: 1.2.1
-    CURRENT_PROJECT_VERSION: 121
+    MARKETING_VERSION: 1.2.2
+    CURRENT_PROJECT_VERSION: 122
 targets:
   SniSpoofingMac:
     type: application

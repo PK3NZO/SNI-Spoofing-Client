@@ -60,7 +60,7 @@ struct ContentView: View {
 
     private var appVersionLabel: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        return "v\(version ?? "1.2.1")"
+        return "v\(version ?? "1.2.2")"
     }
 
     private enum StatusBadgeKind {

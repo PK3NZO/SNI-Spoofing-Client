@@ -15,9 +15,9 @@ Two separate release tracks are supported:
 
 Recommended release assets:
 
-- `SniSpoofingClient-macos-arm64-v1.2.1.dmg`
-- `SniSpoofingClient-macos-x86_64-v1.2.1.dmg`
-- `checksums-v1.2.1.txt`
+- `SniSpoofingClient-macos-arm64-v1.2.2.dmg`
+- `SniSpoofingClient-macos-x86_64-v1.2.2.dmg`
+- `checksums-v1.2.2.txt`
 
 ## 2. Build
 

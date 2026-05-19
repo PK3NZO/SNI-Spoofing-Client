@@ -2,7 +2,7 @@
 
 Desktop client for running SNI-based DPI bypass workflows with a shared cross-platform runtime direction and a production macOS app.
 
-[![Version](https://img.shields.io/badge/version-1.2.1-2563eb.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
+[![Version](https://img.shields.io/badge/version-1.2.2-2563eb.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-111827.svg)](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-16a34a.svg)](LICENSE)
 
@@ -47,11 +47,11 @@ Download the latest signed release assets from:
 
 - [GitHub Releases](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 
-Expected macOS assets for `v1.2.1`:
+Expected macOS assets for `v1.2.2`:
 
-- `SniSpoofingClient-macos-arm64-v1.2.1.dmg`
-- `SniSpoofingClient-macos-x86_64-v1.2.1.dmg`
-- `checksums-v1.2.1.txt`
+- `SniSpoofingClient-macos-arm64-v1.2.2.dmg`
+- `SniSpoofingClient-macos-x86_64-v1.2.2.dmg`
+- `checksums-v1.2.2.txt`
 
 Windows preview assets are not published as signed release artifacts yet.
 
@@ -129,7 +129,7 @@ For a final end-user installer:
 1. Run `.\scripts\windows\release.ps1`
 2. The scripts auto-download `xray.exe` if needed
 3. The scripts try to auto-install `Inno Setup 6` with `winget` if needed
-4. Deliver `release/windows/SNI-Spoofing-Setup-v1.2.1.exe` to users
+4. Deliver `release/windows/SNI-Spoofing-Setup-v1.2.2.exe` to users
 
 You can also build the Windows installer from macOS indirectly through GitHub Actions:
 
@@ -207,11 +207,11 @@ SNI-Spoofing Client یک پروژه دسکتاپ برای سناریوهای د�
 
 - [GitHub Releases](https://github.com/PK3NZO/SNI-Spoofing-Client/releases)
 
-نام فایل‌های مورد انتظار برای `v1.2.1`:
+نام فایل‌های مورد انتظار برای `v1.2.2`:
 
-- `SniSpoofingClient-macos-arm64-v1.2.1.dmg`
-- `SniSpoofingClient-macos-x86_64-v1.2.1.dmg`
-- `checksums-v1.2.1.txt`
+- `SniSpoofingClient-macos-arm64-v1.2.2.dmg`
+- `SniSpoofingClient-macos-x86_64-v1.2.2.dmg`
+- `checksums-v1.2.2.txt`
 
 فعلاً asset امضاشده برای Windows منتشر نمی‌شود.
 
@@ -300,7 +300,7 @@ cd macos-arm
 1. فقط `.\scripts\windows\release.ps1` را اجرا کنید
 2. اگر `xray.exe` نباشد، اسکریپت خودش دانلودش می‌کند
 3. اگر `Inno Setup 6` نباشد، اسکریپت سعی می‌کند با `winget` خودش نصبش کند
-4. فایل نهایی `release/windows/SNI-Spoofing-Setup-v1.2.1.exe` را به کاربر بدهید
+4. فایل نهایی `release/windows/SNI-Spoofing-Setup-v1.2.2.exe` را به کاربر بدهید
 
 اگر روی macOS هستید، می‌توانید همین خروجی ویندوز را از طریق GitHub Actions بگیرید:
 
