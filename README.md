@@ -8,9 +8,11 @@ Desktop client for running SNI-based DPI bypass workflows with a shared cross-pl
 
 ## Preview
 
-![SNI-Spoofing Client screenshot](docs/screenshots/app-overview-v1.2.1.jpeg)
+![SNI-Spoofing Client overview screenshot](docs/screenshots/app-overview-v1.2.2.jpeg)
 
-A live macOS screenshot of the current desktop client UI.
+![SNI-Spoofing Client workflow screenshot](docs/screenshots/app-workflow-v1.2.2.jpeg)
+
+Live macOS screenshots of the current desktop client UI in `v1.2.2`.
 
 ## English
 
