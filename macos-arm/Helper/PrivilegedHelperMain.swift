@@ -20,19 +20,14 @@ struct SniProxyHelperMain {
             print("logLevel=\(configuration.logLevel.rawValue)")
 
             let semaphore = DispatchSemaphore(value: 0)
-            var lastPrintedProxySnapshot: (phase: String, connections: Int, up: Int, down: Int)?
+            let proxySnapshotStore = ProxySnapshotStore()
             let service = LocalProxyService { status in
-                let previousSnapshot = lastPrintedProxySnapshot
-                let shouldEmitProxyStatus: Bool
-                if let previousSnapshot {
-                    shouldEmitProxyStatus =
-                        previousSnapshot.phase != status.phase ||
-                        previousSnapshot.connections != status.activeConnections ||
-                        previousSnapshot.up != status.bytesUploaded ||
-                        previousSnapshot.down != status.bytesDownloaded
-                } else {
-                    shouldEmitProxyStatus = true
-                }
+                let shouldEmitProxyStatus = proxySnapshotStore.shouldEmit(
+                    phase: status.phase,
+                    connections: status.activeConnections,
+                    uploadedBytes: status.bytesUploaded,
+                    downloadedBytes: status.bytesDownloaded
+                )
 
                 guard shouldEmitProxyStatus || status.logLevel.priority >= configuration.logLevel.priority else {
                     return
@@ -46,11 +41,11 @@ struct SniProxyHelperMain {
                 }
                 print("[\(status.logLevel.rawValue)] [proxy] phase=\(status.phase) connections=\(status.activeConnections) bytesUp=\(status.bytesUploaded) bytesDown=\(status.bytesDownloaded) iface=\(interfaceText) detail=\(detail)")
                 fflush(stdout)
-                lastPrintedProxySnapshot = (
+                proxySnapshotStore.store(
                     phase: status.phase,
                     connections: status.activeConnections,
-                    up: status.bytesUploaded,
-                    down: status.bytesDownloaded
+                    uploadedBytes: status.bytesUploaded,
+                    downloadedBytes: status.bytesDownloaded
                 )
             }
 
@@ -85,6 +80,38 @@ struct SniProxyHelperMain {
             fputs("Helper failed: \(error.localizedDescription)\n", stderr)
             Foundation.exit(1)
         }
+    }
+}
+
+private final class ProxySnapshotStore {
+    private typealias Snapshot = (phase: String, connections: Int, up: Int, down: Int)
+
+    private let lock = NSLock()
+    private var snapshot: Snapshot?
+
+    func shouldEmit(phase: String, connections: Int, uploadedBytes: Int, downloadedBytes: Int) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard let snapshot else {
+            return true
+        }
+
+        return snapshot.phase != phase ||
+            snapshot.connections != connections ||
+            snapshot.up != uploadedBytes ||
+            snapshot.down != downloadedBytes
+    }
+
+    func store(phase: String, connections: Int, uploadedBytes: Int, downloadedBytes: Int) {
+        lock.lock()
+        snapshot = (
+            phase: phase,
+            connections: connections,
+            up: uploadedBytes,
+            down: downloadedBytes
+        )
+        lock.unlock()
     }
 }
 

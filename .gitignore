@@ -20,6 +20,10 @@ DerivedData/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/**
+*.xcodeproj/xcuserdata/**
+**/xcuserdata/
+**/xcuserdata/**
 *.moved-aside
 *.swp
 macos-arm/build/

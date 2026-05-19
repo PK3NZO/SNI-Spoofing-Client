@@ -26,6 +26,11 @@ if [ "${ARCH}" = "unsupported" ]; then
 fi
 
 ./sign_release.sh "${ARCH}"
+
+if [ -n "${NOTARYTOOL_PROFILE:-}" ]; then
+  ./notarize_app.sh "${ARCH}"
+fi
+
 ./package_dmg.sh "${ARCH}"
 
 if [ -n "${NOTARYTOOL_PROFILE:-}" ]; then

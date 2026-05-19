@@ -5,6 +5,8 @@ cd "$(dirname "$0")"
 
 VERSION="$(tr -d '\n' < "$PWD/VERSION")"
 SIGNING_IDENTITY="${MACOS_SIGN_IDENTITY:-}"
+APP_PROFILE_PATH="${MACOS_APP_PROFILE:-}"
+PACKET_TUNNEL_PROFILE_PATH="${MACOS_PACKET_TUNNEL_PROFILE:-}"
 
 normalize_arch() {
   local raw_arch="${1:-}"
@@ -41,6 +43,8 @@ HELPER_PATH="${APP_PATH}/Contents/Resources/sni-proxy-helper"
 XRAY_ARM64_PATH="${APP_PATH}/Contents/Resources/xray-arm64.bin"
 XRAY_X86_PATH="${APP_PATH}/Contents/Resources/xray-x86_64.bin"
 APPEX_PATH="${APP_PATH}/Contents/PlugIns/PacketTunnel.appex"
+APP_EMBEDDED_PROFILE_PATH="${APP_PATH}/Contents/embedded.provisionprofile"
+APPEX_EMBEDDED_PROFILE_PATH="${APPEX_PATH}/Contents/embedded.provisionprofile"
 
 if [ ! -d "${APP_PATH}" ]; then
   echo "Release app not found at: ${APP_PATH}" >&2
@@ -53,6 +57,36 @@ for required_path in "${HELPER_PATH}" "${XRAY_ARM64_PATH}" "${XRAY_X86_PATH}" "$
     exit 1
   fi
 done
+
+requires_network_extension_profile() {
+  /usr/libexec/PlistBuddy -c "Print :com.apple.developer.networking.networkextension" "$1" >/dev/null 2>&1
+}
+
+copy_profile() {
+  local source_path="$1"
+  local destination_path="$2"
+  local label="$3"
+
+  if [ -z "${source_path}" ]; then
+    echo "${label} is required for this build because Network Extension entitlements are present." >&2
+    exit 1
+  fi
+
+  if [ ! -f "${source_path}" ]; then
+    echo "${label} not found at: ${source_path}" >&2
+    exit 1
+  fi
+
+  cp "${source_path}" "${destination_path}"
+}
+
+if requires_network_extension_profile "$PWD/App/SniSpoofingMac.entitlements"; then
+  copy_profile "${APP_PROFILE_PATH}" "${APP_EMBEDDED_PROFILE_PATH}" "MACOS_APP_PROFILE"
+fi
+
+if requires_network_extension_profile "$PWD/PacketTunnel/SniPacketTunnel.entitlements"; then
+  copy_profile "${PACKET_TUNNEL_PROFILE_PATH}" "${APPEX_EMBEDDED_PROFILE_PATH}" "MACOS_PACKET_TUNNEL_PROFILE"
+fi
 
 codesign --force --sign "${SIGNING_IDENTITY}" --timestamp --options runtime "${XRAY_ARM64_PATH}"
 codesign --force --sign "${SIGNING_IDENTITY}" --timestamp --options runtime "${XRAY_X86_PATH}"

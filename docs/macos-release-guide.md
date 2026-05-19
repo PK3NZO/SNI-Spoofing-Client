@@ -37,6 +37,18 @@ Export your Developer ID Application identity:
 export MACOS_SIGN_IDENTITY="Developer ID Application: YOUR NAME OR ORG (TEAMID)"
 ```
 
+Because this app uses `Network Extension`, you also need Developer ID provisioning profiles that match both bundle identifiers:
+
+- host app: `com.local.sni.macos`
+- packet tunnel extension: `com.local.sni.macos.packet-tunnel`
+
+Export their local paths too:
+
+```bash
+export MACOS_APP_PROFILE="/absolute/path/to/SniSpoofingMac.provisionprofile"
+export MACOS_PACKET_TUNNEL_PROFILE="/absolute/path/to/SniPacketTunnel.provisionprofile"
+```
+
 Then sign each release:
 
 ```bash
@@ -80,6 +92,8 @@ Then:
 export NOTARYTOOL_PROFILE="SniSpoofingNotary"
 
 cd macos-arm
+./notarize_app.sh arm64
+./notarize_app.sh x86_64
 ./notarize_dmg.sh arm64
 ./notarize_dmg.sh x86_64
 ```
@@ -89,6 +103,8 @@ Or run the whole flow:
 ```bash
 export MACOS_SIGN_IDENTITY="Developer ID Application: YOUR NAME OR ORG (TEAMID)"
 export NOTARYTOOL_PROFILE="SniSpoofingNotary"
+export MACOS_APP_PROFILE="/absolute/path/to/SniSpoofingMac.provisionprofile"
+export MACOS_PACKET_TUNNEL_PROFILE="/absolute/path/to/SniPacketTunnel.provisionprofile"
 
 cd macos-arm
 ./release_arm.sh
@@ -140,4 +156,8 @@ This is not something you can safely hide inside a properly signed public macOS 
 - DMG opens correctly
 - signed app verifies:
   - `codesign --verify --deep --strict`
+- installed app passes launch-time entitlement validation:
+  - `open /Applications/SniSpoofingMac.app`
+- app bundle staples successfully:
+  - `xcrun stapler validate`
 - notarized DMG staples successfully
