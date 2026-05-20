@@ -46,9 +46,6 @@ class RuntimeEvent:
 
 
 class AppRuntime:
-    fixed_socks_port = 20000
-    fixed_http_port = 30000
-
     def __init__(self, config_path: str | None = None) -> None:
         self._config_path = config_path
         self._config = AppConfig.load(config_path)
@@ -235,15 +232,17 @@ class AppRuntime:
         self._set_step(WorkflowStepKey.XRAY, WorkflowStepState.RUNNING, "Starting Xray with generated config")
         xray_config = build_xray_config(
             self._proxy_link_profile,
-            inbound_socks_port=self.fixed_socks_port,
-            inbound_http_port=self.fixed_http_port,
+            inbound_socks_port=self._config.socks_port,
+            inbound_http_port=self._config.http_port,
+            inbound_host=self._config.inbound_host,
             outbound_address=self._config.listen_host,
             outbound_port=self._config.listen_port,
             log_level=self._config.log_level,
         )
         self._emit(
             "debug",
-            f"Xray config prepared | inbounds=socks:{self.fixed_socks_port},http:{self.fixed_http_port} "
+            f"Xray config prepared | inbounds=socks:{self._config.socks_port},http:{self._config.http_port} "
+            f"listen={self._config.inbound_host} "
             f"outbound={self._config.listen_host}:{self._config.listen_port} original={self._original_server_summary}",
         )
         self._xray_service.start(xray_config)
@@ -254,15 +253,16 @@ class AppRuntime:
         self._set_step(
             WorkflowStepKey.XRAY,
             WorkflowStepState.SUCCESS,
-            f"Xray started | HTTP {self.fixed_http_port} | SOCKS {self.fixed_socks_port}",
+            f"Xray started | HTTP {self._config.inbound_host}:{self._config.http_port} | SOCKS {self._config.inbound_host}:{self._config.socks_port}",
         )
+        proxy_host = "127.0.0.1" if self._config.inbound_host in {"0.0.0.0", ""} else self._config.inbound_host
         if self._config.enable_system_proxy:
             self._set_step(WorkflowStepKey.SYSTEM_ROUTE, WorkflowStepState.RUNNING, "Configuring Windows system proxy")
             proxy_server = self._system_proxy_manager.enable(
-                http_host="127.0.0.1",
-                http_port=self.fixed_http_port,
-                socks_host="127.0.0.1",
-                socks_port=self.fixed_socks_port,
+                http_host=proxy_host,
+                http_port=self._config.http_port,
+                socks_host=proxy_host,
+                socks_port=self._config.socks_port,
             )
             self._route_summary = f"System proxy | {proxy_server}"
             self._set_step(WorkflowStepKey.SYSTEM_ROUTE, WorkflowStepState.SUCCESS, proxy_server)
@@ -273,12 +273,12 @@ class AppRuntime:
         self._headline = "Testing proxy route"
         self._detail = "Xray is running; validating traffic through the local bypass stack."
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.RUNNING, "Testing internet access through the local HTTP proxy")
-        self._emit("debug", f"Connectivity probe started | http_proxy=127.0.0.1:{self.fixed_http_port}")
-        probe_url = probe_via_local_http_proxy(self.fixed_http_port)
+        self._emit("debug", f"Connectivity probe started | http_proxy=127.0.0.1:{self._config.http_port}")
+        probe_url = probe_via_local_http_proxy(self._config.http_port)
 
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.SUCCESS, f"Probe success: {probe_url}")
         self._probe_summary = probe_url
-        self._headline = f"SOCKS 127.0.0.1:{self.fixed_socks_port} | HTTP 127.0.0.1:{self.fixed_http_port}"
+        self._headline = f"SOCKS {self._config.inbound_host}:{self._config.socks_port} | HTTP {self._config.inbound_host}:{self._config.http_port}"
         self._detail = "Xray + local bypass stack is active. App traffic can route through the generated local proxies."
         self._set_state(RuntimeState.RUNNING, "Proxy route validated")
 

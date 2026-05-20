@@ -534,6 +534,9 @@ class MainWindow(QMainWindow):
         self.advanced_form.setVerticalSpacing(12)
         self.listen_host = QLineEdit()
         self.listen_port = QLineEdit()
+        self.inbound_host = QLineEdit()
+        self.socks_port = QLineEdit()
+        self.http_port = QLineEdit()
         self.log_level = QComboBox()
         self.log_level.addItems(["debug", "info", "error"])
         self.backend = QComboBox()
@@ -545,6 +548,9 @@ class MainWindow(QMainWindow):
             self.backend.addItem("unsupported")
         self.advanced_form.addRow(self.copy.listen_host, self.listen_host)
         self.advanced_form.addRow(self.copy.listen_port, self.listen_port)
+        self.advanced_form.addRow(self.copy.inbound_host, self.inbound_host)
+        self.advanced_form.addRow(self.copy.socks_port, self.socks_port)
+        self.advanced_form.addRow(self.copy.http_port, self.http_port)
         self.advanced_form.addRow(self.copy.log_level, self.log_level)
         self.advanced_form.addRow(self.copy.backend, self.backend)
         advanced_holder = QWidget()
@@ -636,6 +642,9 @@ class MainWindow(QMainWindow):
         config = self.runtime.config
         self.listen_host.setText(config.listen_host)
         self.listen_port.setText(str(config.listen_port))
+        self.inbound_host.setText(config.inbound_host)
+        self.socks_port.setText(str(config.socks_port))
+        self.http_port.setText(str(config.http_port))
         self.allowlist_domain.setText(config.whitelist_domain)
         self.allowlist_ip.setText(f"{config.whitelist_ip}:{config.whitelist_port}")
         self.proxy_link.setPlainText(config.proxy_link)
@@ -673,6 +682,9 @@ class MainWindow(QMainWindow):
             enable_system_proxy=self.enable_system_proxy.isChecked(),
             log_level=self.log_level.currentText().strip(),
             backend=self.backend.currentText().strip(),
+            inbound_host=self.inbound_host.text().strip(),
+            socks_port=int(self.socks_port.text().strip()),
+            http_port=int(self.http_port.text().strip()),
         )
 
     def append_log(self, message: str) -> None:
@@ -734,7 +746,7 @@ class MainWindow(QMainWindow):
     def _status_badge_text(self, headline: str) -> str:
         if self.runtime.state == RuntimeState.RUNNING:
             if "SOCKS" in headline:
-                return "SOCKS Proxy Is Up on 127.0.0.1:20000"
+                return headline
             return headline or "Connected"
         if self.runtime.state == RuntimeState.STARTING:
             return "Connecting"
@@ -923,7 +935,15 @@ class MainWindow(QMainWindow):
             if label_item is not None and label_item.widget() is not None:
                 key = self._detail_keys[row]
                 label_item.widget().setText(f"{self.copy.detail_label(key)}:")
-        for row, label_text in enumerate([self.copy.listen_host, self.copy.listen_port, self.copy.log_level, self.copy.backend]):
+        for row, label_text in enumerate([
+            self.copy.listen_host,
+            self.copy.listen_port,
+            self.copy.inbound_host,
+            self.copy.socks_port,
+            self.copy.http_port,
+            self.copy.log_level,
+            self.copy.backend,
+        ]):
             label_item = self.advanced_form.itemAt(row, QFormLayout.ItemRole.LabelRole)
             if label_item is not None and label_item.widget() is not None:
                 label_item.widget().setText(label_text)
