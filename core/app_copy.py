@@ -130,6 +130,10 @@ class DesktopCopy:
         return "Backend" if self.language == AppLanguage.ENGLISH else "Backend"
 
     @property
+    def advanced_settings(self) -> str:
+        return "Advanced Settings" if self.language == AppLanguage.ENGLISH else "تنظیمات پیشرفته"
+
+    @property
     def details(self) -> str:
         return "Details" if self.language == AppLanguage.ENGLISH else "جزئیات"
 
