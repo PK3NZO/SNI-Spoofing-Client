@@ -110,6 +110,18 @@ class DesktopCopy:
         return "Listen port" if self.language == AppLanguage.ENGLISH else "Listen port"
 
     @property
+    def inbound_host(self) -> str:
+        return "Proxy listen host" if self.language == AppLanguage.ENGLISH else "آدرس listen پروکسی"
+
+    @property
+    def socks_port(self) -> str:
+        return "SOCKS5 port" if self.language == AppLanguage.ENGLISH else "پورت SOCKS5"
+
+    @property
+    def http_port(self) -> str:
+        return "HTTP proxy port" if self.language == AppLanguage.ENGLISH else "پورت پروکسی HTTP"
+
+    @property
     def log_level(self) -> str:
         return "Log level" if self.language == AppLanguage.ENGLISH else "سطح لاگ"
 
