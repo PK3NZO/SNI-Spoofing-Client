@@ -52,6 +52,9 @@ class AppConfig:
     enable_system_proxy: bool = True
     log_level: str = "error"
     backend: str | None = None
+    inbound_host: str = "127.0.0.1"
+    socks_port: int = 20000
+    http_port: int = 30000
 
     @classmethod
     def default(cls) -> "AppConfig":
@@ -70,6 +73,9 @@ class AppConfig:
             enable_system_proxy=True,
             log_level="error",
             backend=None,
+            inbound_host="127.0.0.1",
+            socks_port=20000,
+            http_port=30000,
         )
 
     @classmethod
@@ -101,6 +107,9 @@ class AppConfig:
                 enable_system_proxy=bool(raw.get("ENABLE_SYSTEM_PROXY", default.enable_system_proxy)),
                 log_level=str(raw.get("LOG_LEVEL", default.log_level)),
                 backend=raw.get("BACKEND"),
+                inbound_host=str(raw.get("INBOUND_HOST", default.inbound_host)),
+                socks_port=_safe_int(raw.get("SOCKS_PORT"), default.socks_port),
+                http_port=_safe_int(raw.get("HTTP_PORT"), default.http_port),
             )
             return config.runtime_compatible()
         except (json.JSONDecodeError, KeyError, TypeError, OSError):
@@ -131,6 +140,9 @@ class AppConfig:
             "ENABLE_SYSTEM_PROXY": normalized.enable_system_proxy,
             "LOG_LEVEL": normalized.log_level,
             "BACKEND": normalized.backend,
+            "INBOUND_HOST": normalized.inbound_host,
+            "SOCKS_PORT": normalized.socks_port,
+            "HTTP_PORT": normalized.http_port,
         }
 
     def save(self, config_path: str | None = None) -> None:
@@ -151,6 +163,9 @@ class AppConfig:
         whitelist_ip = self.whitelist_ip.strip() or self.connect_ip.strip() or self.default().whitelist_ip
         whitelist_port = self.whitelist_port if self.whitelist_port > 0 else self.default().whitelist_port
         ui_language = self.ui_language if self.ui_language in {"english", "persian"} else "english"
+        socks_port = self.socks_port if self.socks_port > 0 else self.default().socks_port
+        http_port = self.http_port if self.http_port > 0 else self.default().http_port
+        inbound_host = self.inbound_host.strip() or self.default().inbound_host
         return replace(
             self,
             connect_ip=whitelist_ip,
@@ -161,6 +176,9 @@ class AppConfig:
             whitelist_port=whitelist_port,
             ui_language=ui_language,
             connection_mode=mode,
+            socks_port=socks_port,
+            http_port=http_port,
+            inbound_host=inbound_host,
         )
 
     def selected_backend(self) -> str:
