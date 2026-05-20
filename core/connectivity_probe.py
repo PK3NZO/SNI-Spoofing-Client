@@ -8,7 +8,7 @@ class ConnectivityProbeError(RuntimeError):
     pass
 
 
-def probe_via_local_http_proxy(http_port: int) -> str:
+def probe_via_local_http_proxy(http_port: int, host: str = "127.0.0.1") -> str:
     probe_urls = [
         "https://www.facebook.com/",
         "https://www.apple.com/library/test/success.html",
@@ -16,8 +16,8 @@ def probe_via_local_http_proxy(http_port: int) -> str:
     ]
     last_error: Exception | None = None
     proxies = {
-        "http": f"http://127.0.0.1:{http_port}",
-        "https": f"http://127.0.0.1:{http_port}",
+        "http": f"http://{host}:{http_port}",
+        "https": f"http://{host}:{http_port}",
     }
     opener = build_opener(ProxyHandler(proxies))
     for url in probe_urls:

@@ -255,7 +255,7 @@ class AppRuntime:
             WorkflowStepState.SUCCESS,
             f"Xray started | HTTP {self._config.inbound_host}:{self._config.http_port} | SOCKS {self._config.inbound_host}:{self._config.socks_port}",
         )
-        proxy_host = "127.0.0.1" if self._config.inbound_host in {"0.0.0.0", ""} else self._config.inbound_host
+        proxy_host = "127.0.0.1" if self._config.inbound_host == "0.0.0.0" else self._config.inbound_host
         if self._config.enable_system_proxy:
             self._set_step(WorkflowStepKey.SYSTEM_ROUTE, WorkflowStepState.RUNNING, "Configuring Windows system proxy")
             proxy_server = self._system_proxy_manager.enable(
@@ -273,8 +273,8 @@ class AppRuntime:
         self._headline = "Testing proxy route"
         self._detail = "Xray is running; validating traffic through the local bypass stack."
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.RUNNING, "Testing internet access through the local HTTP proxy")
-        self._emit("debug", f"Connectivity probe started | http_proxy=127.0.0.1:{self._config.http_port}")
-        probe_url = probe_via_local_http_proxy(self._config.http_port)
+        self._emit("debug", f"Connectivity probe started | http_proxy={proxy_host}:{self._config.http_port}")
+        probe_url = probe_via_local_http_proxy(self._config.http_port, host=proxy_host)
 
         self._set_step(WorkflowStepKey.PROBE, WorkflowStepState.SUCCESS, f"Probe success: {probe_url}")
         self._probe_summary = probe_url

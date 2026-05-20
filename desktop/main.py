@@ -746,6 +746,7 @@ class MainWindow(QMainWindow):
     def _status_badge_text(self, headline: str) -> str:
         if self.runtime.state == RuntimeState.RUNNING:
             if "SOCKS" in headline:
+                # headline already contains "SOCKS <host>:<port> | HTTP <host>:<port>"
                 return headline
             return headline or "Connected"
         if self.runtime.state == RuntimeState.STARTING:
