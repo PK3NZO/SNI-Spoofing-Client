@@ -240,6 +240,7 @@ class MainWindow(QMainWindow):
         self._detail_keys = ["Mode", "Connection", "Allowlist", "System Route", "Original Server", "Probe"]
         self._details_expanded = False
         self._workflow_expanded = False
+        self._advanced_expanded = False
         self._workflow_render_signature: tuple[tuple[str, str, str], ...] | None = None
         self.setWindowTitle(self.copy.app_title)
         self.setMinimumSize(1180, 780)
@@ -530,6 +531,11 @@ class MainWindow(QMainWindow):
         proxy_toggle_layout.addWidget(self.proxy_toggle_hint)
         layout.addWidget(proxy_toggle_card)
 
+        self.advanced_toggle = QPushButton()
+        self.advanced_toggle.setMinimumHeight(48)
+        self.advanced_toggle.clicked.connect(self.on_toggle_advanced)
+        layout.addWidget(self.advanced_toggle)
+
         self.advanced_form = QFormLayout()
         self.advanced_form.setVerticalSpacing(12)
         self.listen_host = QLineEdit()
@@ -731,11 +737,15 @@ class MainWindow(QMainWindow):
         self._render_workflow()
         self.details_card.setVisible(self._details_expanded)
         self.workflow_card.setVisible(self._workflow_expanded)
+        self.advanced_holder.setVisible(self._advanced_expanded)
         self.details_toggle.setText(
             f"{'⌄' if self._details_expanded else '›'}  {self.copy.details}\n{summary.detail or '-'}     {self.copy.hide if self._details_expanded else self.copy.show}"
         )
         self.workflow_toggle.setText(
             f"{'⌄' if self._workflow_expanded else '›'}  {self.copy.workflow}\n{self.copy.workflow_subtitle(len(self.runtime.workflow_steps))}     {self.copy.hide if self._workflow_expanded else self.copy.show}"
+        )
+        self.advanced_toggle.setText(
+            f"{'⌄' if self._advanced_expanded else '›'}  {self.copy.advanced_settings}     {self.copy.hide if self._advanced_expanded else self.copy.show}"
         )
         if self.runtime.last_error:
             self.error_banner.setText(self.runtime.last_error)
@@ -888,6 +898,10 @@ class MainWindow(QMainWindow):
 
     def on_toggle_workflow(self) -> None:
         self._workflow_expanded = not self._workflow_expanded
+        self.refresh_ui_state()
+
+    def on_toggle_advanced(self) -> None:
+        self._advanced_expanded = not self._advanced_expanded
         self.refresh_ui_state()
 
     def current_language(self) -> str:
